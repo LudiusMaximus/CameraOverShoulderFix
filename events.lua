@@ -46,9 +46,11 @@ end
 
 -- While dismounting we need to execute a shoulder offset change at the time
 -- of the next UNIT_AURA event; but only then. So we use this variable as a flag.
--- We also need this for the perfect timing while changing from Ghostwolf back to Shaman
--- and from shapeshifted back to Druid.
+-- We also need this for the perfect timing while changing from Ghostwolf back to Shaman.
 cosFix.activateNextUnitAura = false
+
+-- Needed for when changing from shapeshifted back to Druid.
+cosFix.activateNextUnitModelChanged = false
 
 -- The cooldown of "Two Forms" is shorter than it actually takes to perform the transformation.
 -- This flag indicates that a change into Worgen with "Two Forms" is in progress.
@@ -77,7 +79,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
   -- TODO: When access function for DynamicCam stopEasingShoulderOffset() is available.
-  
+  -- Maybe best to do with a pre-hook!
+
   -- Got to stop shoulder offset easing that might already be in process.
   -- E.g. an easing started in ExitSituation() called at the same time as
   -- the execution of PLAYER_MOUNT_DISPLAY_CHANGED.
@@ -86,23 +89,23 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- calculate the shoulder offset for it and start the shoulder offset ease.
   -- Then comes the UPDATE_SHAPESHIFT_FORM event triggering ShoulderOffsetEventHandler(),
   -- but its new shoulder offset value will be overridden by the ongoing easing.
-    
+
   if IsAddOnLoaded("DynamicCam") then
     -- TODO
     -- stopEasingShoulderOffset()
   end
-  
-  
+
+
 
   local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
-  
-  
+
+
   -- TODO: Get this from dynamicCam or from own setting...
   -- If from dynamicCam it might also be from the current situation. So check this!!!
   if IsAddOnLoaded("DynamicCam") then
     userSetShoulderOffset = DynamicCam.db.profile.defaultCvars["test_cameraOverShoulder"]
   end
-    
+
   local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
 
 
@@ -127,7 +130,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- If you hit "Two Forms" again before completely transforming you just stay in Human form.
         if (self.changingIntoWorgen) then
           -- print("You are currently changing into worgen")
-        
+
           self.changingIntoWorgen = false
           -- We need to skip the next two executions of UNIT_MODEL_CHANGED.
           self.skipNextWorgenUnitModelChanged = 2
@@ -190,6 +193,17 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       return
     end
 
+    -- This is triggered when turning from druid shapeshif back into normal.
+    -- This is particularly also executed for Worgen druids, so the rest below is
+    -- not checked then. But it works fine!
+    if (self.activateNextUnitModelChanged == true) then
+      self.activateNextUnitModelChanged = false
+      -- print("UNIT_MODEL_CHANGED executing!")
+      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+      return self:OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+    end
+
+
     local _, raceFile = UnitRace("player")
     if ((raceFile == "Worgen")) then
 
@@ -210,7 +224,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       if (self.skipNextWorgenUnitModelChanged > 0) then
         -- print("Suppressing UNIT_MODEL_CHANGED because of skipNextWorgenUnitModelChanged ==", self.skipNextWorgenUnitModelChanged)
         self.skipNextWorgenUnitModelChanged = self.skipNextWorgenUnitModelChanged - 1
-
         return
       end
 
@@ -221,17 +234,17 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       local modelId = modelFrame:GetModelFileID()
 
       -- print("UNIT_MODEL_CHANGED thinks you are", modelId, "while lastWorgenModelId is", self.db.char.lastWorgenModelId)
-     
+
       if (modelId == nil) then
         -- print("Using the opposite of lastWorgenModelId.")
         modelId = self:SwitchLastWorgenModelId()
-        
+
         -- This will eventually set the right model ID.
         self:SetLastWorgenModelId()
       end
 
       -- print("Assuming you turn into", modelId)
-      
+
 
       if ((modelId == self.modelId["Worgen"][2]) or (modelId == self.modelId["Worgen"][3])) then
         -- print("UNIT_MODEL_CHANGED -> Worgen")
@@ -330,6 +343,11 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- So it will set activateNextUnitAura to true which we are revoking here.
         self.activateNextUnitAura = false
 
+
+        -- Worgen druids automatically turn into Worgen form when turning into a druid form.
+        self.db.char.lastWorgenModelId = self.modelId["Worgen"][UnitSex("player")]
+
+
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
 
         -- -- TODO: Still not happy with these transitions... :-(
@@ -347,8 +365,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- print("You are turning into normal Druid!")
 
         -- Do not change the shoulder offset here.
-        -- Wait until the next UNIT_AURA for perfect timing.
-        self.activateNextUnitAura = true
+        -- Wait until the next UNIT_MODEL_CHANGED for perfect timing.
+        self.activateNextUnitModelChanged = true
         return
       end
     end -- (englishClass == "DRUID")
@@ -407,8 +425,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       return
     end
 
-    -- This is flag is set while dismounting, while changing from Ghostwolf into Shaman
-    -- and while changing from shapeshifted into Druid.
+    -- This is flag is set while dismounting, while changing from Ghostwolf into Shaman.
     if (self.activateNextUnitAura == true) then
       self.activateNextUnitAura = false
       -- print("UNIT_AURA executing!")

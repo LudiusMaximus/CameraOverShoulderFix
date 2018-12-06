@@ -7,7 +7,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName);
 -- explaining how to determine the correct factor, which they would then send to us.
 cosFix.vehicleIdToShoulderOffsetFactor = {
 
-    [35129]  = 0.38,  -- Reprogrammed Shredder
-    [40854]  = 0.20,  -- River Boat
+  [35129]  = 0.38,  -- Reprogrammed Shredder
+  [40854]  = 0.20,  -- River Boat
 
 };

@@ -9,7 +9,7 @@ local defaults = {
     shoulderOffsetZoom = true,
     debugOutput = false,
     cvars = {
-      test_cameraOverShoulder = 1.5,    
+      test_cameraOverShoulder = 1.5,
       test_cameraDynamicPitch = 1,
       test_cameraDynamicPitchBaseFovPad = 0.3,
       test_cameraDynamicPitchBaseFovPadFlying = 1,
@@ -88,14 +88,14 @@ local optionsTable = {
           max = 8,
           step = .1,
           width = "full",
-          
+
           get = function() return cosFix.db.profile.cvars.test_cameraOverShoulder end,
           set = function(_, newValue)
                   cosFix.db.profile.cvars.test_cameraOverShoulder = newValue
                   SetCVar("test_cameraOverShoulder", newValue)
                 end,
         },
-        
+
         dynamicPitch = {
           order = 3,
           type = 'group',
@@ -186,17 +186,12 @@ end
 function cosFix:InitializeOptions()
 
   LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable(folderName, optionsTable)
-  
-  -- If DynamicCam is used, place the cosFix options as one of its sub-groups.
-  if IsAddOnLoaded("DynamicCam") then
-    self.optionsMenu = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(folderName, folderName, "DynamicCam")
-  else
-    self.optionsMenu = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(folderName, folderName)
-  end
-  
+
+  self.optionsMenu = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(folderName, folderName)
+
   self:RegisterChatCommand(folderName, "OpenOptionsMenu");
   self:RegisterChatCommand("cosfix", "OpenOptionsMenu");
   self:RegisterChatCommand("cf", "OpenOptionsMenu");
-  
+
 end
 

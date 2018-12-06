@@ -84,7 +84,7 @@ end
 
 function cosFix:DebugPrint(...)
   if (self.db.profile.debugOutput) then
-      self:Print(...)
+    self:Print(...)
   end
 end
 
@@ -104,7 +104,6 @@ function cosFix:OnEnable()
 
   -- Hide the Blizzard warning.
   UIParent:UnregisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
-  
   
   -- Hooking functions.
   SetCVar = CosFixSetCVar
