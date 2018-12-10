@@ -5,7 +5,10 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 if IsAddOnLoaded("DynamicCam") then
 
-  print("DynamicCam loaded")
+
+  -----------------------------------------------------------------------------
+  -- Basically copying local functions of DynamicCam to make slight changes. --
+  -----------------------------------------------------------------------------
   
   
   local LibCamera = LibStub("LibCamera-1.0");
@@ -15,8 +18,6 @@ if IsAddOnLoaded("DynamicCam") then
       local mult = 10^(numDecimalPlaces or 0);
       return math.floor(num * mult + 0.5) / mult;
   end
-  
-  
   
   
   ----------------------
@@ -43,12 +44,6 @@ if IsAddOnLoaded("DynamicCam") then
       local oldOffest = tonumber(GetCVar("test_cameraOverShoulder"));
       easeShoulderOffsetHandle = LibEasing:Ease(setShoulderOffset, oldOffest, endValue, duration, easingFunc);
   end
-  
-  
-  
-  
-  
-  
   
   
   
@@ -153,6 +148,8 @@ if IsAddOnLoaded("DynamicCam") then
   
   
   
+  
+  -- Override DynamicCam functions that are not local.
   
   local function ReactiveZoomOn()
       CameraZoomIn = ReactiveZoomIn;
