@@ -11,7 +11,7 @@ local defaults = {
     cvars = {
       test_cameraOverShoulder = 1.5,
       test_cameraDynamicPitch = 1,
-      test_cameraDynamicPitchBaseFovPad = 0.3,
+      test_cameraDynamicPitchBaseFovPad = 0.35,
       test_cameraDynamicPitchBaseFovPadFlying = 1,
       test_cameraDynamicPitchBaseFovPadDownScale = 1,
     }
@@ -49,7 +49,7 @@ local optionsTable = {
       set = function(_, newValue)
               cosFix.db.profile.shoulderOffsetZoom = newValue
               -- TODO:
-              -- cosFix:shoulderOffsetZoomCheck();
+              -- cosFix:shoulderOffsetZoomCheck()
               for variable, value in pairs(cosFix.db.profile.cvars) do
                 SetCVar(variable, value)
               end
@@ -189,9 +189,9 @@ function cosFix:InitializeOptions()
 
   self.optionsMenu = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(folderName, folderName)
 
-  self:RegisterChatCommand(folderName, "OpenOptionsMenu");
-  self:RegisterChatCommand("cosfix", "OpenOptionsMenu");
-  self:RegisterChatCommand("cf", "OpenOptionsMenu");
+  self:RegisterChatCommand(folderName, "OpenOptionsMenu")
+  self:RegisterChatCommand("cosfix", "OpenOptionsMenu")
+  self:RegisterChatCommand("cf", "OpenOptionsMenu")
 
 end
 

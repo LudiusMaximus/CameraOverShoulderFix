@@ -90,10 +90,6 @@ end
 
 
 
--- Flag to remember that you are on a taxi, because the shoulder offset change while
--- leaving a taxi (PLAYER_MOUNT_DISPLAY_CHANGED) needs special treatment...
-cosFix.isOnTaxi = false
-
 
 -- WoW interprets the test_cameraOverShoulder variable differently depending on the current player model.
 -- If we want the camera to always have the same shoulder offset relative to the player's center,
@@ -230,9 +226,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     else
       -- print("You are on a taxi!")
 
-      -- Remember that you are on a taxi, because the shoulder offset change while
+      -- Flag to remember that you are on a taxi, because the shoulder offset change while
       -- leaving a taxi (PLAYER_MOUNT_DISPLAY_CHANGED) needs special treatment...
-      cosFix.isOnTaxi = true
+      self.db.char.isOnTaxi = true
 
       -- Works all right for Wind Riders.
       -- TODO: This should probably also be done individually for all taxi models in the game.

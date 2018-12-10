@@ -1,5 +1,5 @@
 local folderName = ...
-local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName);
+local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 cosFix.druidFormIdToShoulderOffsetFactor = {

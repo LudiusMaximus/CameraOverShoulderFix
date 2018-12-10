@@ -1,5 +1,5 @@
 local folderName = ...
-local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName);
+local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 -- Map mountId to sholder offset factor.
 -- TODO: Here we have to fill in offset factors for each and every mount model in the game...

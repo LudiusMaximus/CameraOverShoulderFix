@@ -1,5 +1,5 @@
 local folderName = ...
-local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName);
+local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 -- TODO: Here we have to fill in offset factors for each and every vehicle model in the game...
 -- We could maybe make this a "croudsourcing" endeavour. People will see the console message below,

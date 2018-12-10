@@ -20,3 +20,4 @@ factors_shapeshift.lua
 factors_mounts.lua
 factors_vehicles.lua
 
+dynamicCam_tweaks.lua
