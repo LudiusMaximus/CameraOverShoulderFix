@@ -8,6 +8,7 @@ local defaults = {
     modelIndependentShoulderOffset = true,
     shoulderOffsetZoom = true,
     debugOutput = false,
+    enabled = true,
     cvars = {
       test_cameraOverShoulder = 1.5,
       test_cameraDynamicPitch = 1,
@@ -76,30 +77,46 @@ local optionsTable = {
         description = {
           order = 1,
           type = 'description',
-          name = "As you are using " .. folderName .. " as a stand alone addon, you can set some basic variables here.\nWe recommend, however, to use it as a plugin to DynamicCam which provides a lot more customisation options and camera movement easing.\n",
+          name = "As you are using " .. folderName .. " as a stand alone addon, you can set some basic variables here.\nWe recommend, however, to use " .. folderName .. " as a plugin to DynamicCam which provides a lot more customisation options and camera movement easing.\n",
           width = "full",
         },
-        test_cameraOverShoulder = {
+        enabled = {
           order = 2,
+          type = 'toggle',
+          name = "Enable all",
+          descStyle = "inline",
+          width = "full",
+          get = function() return cosFix.db.profile.enabled end,
+          set = function(_, newValue)
+                  if (newValue) then
+                    cosFix:OnEnable()
+                  else
+                    cosFix:OnDisable()
+                  end
+                  cosFix.db.profile.enabled = newValue
+                end,
+        },
+        test_cameraOverShoulder = {
+          order = 3,
           type = 'range',
           name = "Camera Shoulder Offset",
+          disabled = function() return not cosFix.db.profile.enabled end,
           desc = "Moves the camera left or right from your character.",
           min = -8,
           max = 8,
           step = .1,
           width = "full",
-
           get = function() return cosFix.db.profile.cvars.test_cameraOverShoulder end,
           set = function(_, newValue)
                   cosFix.db.profile.cvars.test_cameraOverShoulder = newValue
                   SetCVar("test_cameraOverShoulder", newValue)
                 end,
         },
-
         dynamicPitch = {
-          order = 3,
+          order = 4,
           type = 'group',
           name = "DynamicPitch",
+          disabled = function() return not cosFix.db.profile.enabled end,
           inline = true,
           args = {
             test_cameraDynamicPitchBaseFovPad = {
@@ -153,9 +170,10 @@ local optionsTable = {
           },
         },
         restoreDefaults = {
-          order = 4,
+          order = 5,
           type = 'execute',
           name = "Restore defaults",
+          disabled = function() return not cosFix.db.profile.enabled end,
           desc = "Restore the settings to the preference of the " .. folderName .. " developer.",
           width = "full",
           func = function()

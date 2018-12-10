@@ -6,13 +6,6 @@ local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "A
 -- Hooking SetCVar().
 CosFix_OriginalSetCVar = SetCVar
 
-
--- Access function for OriginalSetCVar().
-function cosFix:OriginalSetCVar(...)
-  print("cosFix:OriginalSetCVar Access", ...)
-  CosFix_OriginalSetCVar(...)
-end
-
 function CosFixSetCVar(...)
   local variable, value = ...
   
@@ -143,7 +136,6 @@ function cosFix:OnEnable()
     self:NonReactiveZoomOn()
   end
   
-
 
   self:RegisterEvents()
     
