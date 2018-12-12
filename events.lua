@@ -91,18 +91,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- but its new shoulder offset value will be overridden by the ongoing easing.
 
   if IsAddOnLoaded("DynamicCam") then
-    -- TODO
-    -- stopEasingShoulderOffset()
+    self:AccessStopEasingShoulderOffset()
   end
 
 
 
   local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
-
-
-  -- TODO: Get this from dynamicCam or from own setting...
-  -- If from dynamicCam it might also be from the current situation. So check this!!!
   if IsAddOnLoaded("DynamicCam") then
+    -- TODO: Should get the shoulder offset of current situation!
     userSetShoulderOffset = DynamicCam.db.profile.defaultCvars["test_cameraOverShoulder"]
   end
 
