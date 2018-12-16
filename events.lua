@@ -379,15 +379,21 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
 
       -- Sometimes there is no SPELL_UPDATE_USABLE after leaving a taxi.
-      -- But it is also not necessary to wait with setting the corrected value then.
+      -- We can then set the value unmounted immedeately.
       if (self.db.char.isOnTaxi) then
         self.db.char.isOnTaxi = false
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
       end
-
-      -- Sometimes when being dismounted automatically while entering indoors there comes no
-      -- SPELL_UPDATE_USABLE after PLAYER_MOUNT_DISPLAY_CHANGED...
+      -- The same goes for being dismounted automatically while entering indoors.
       if (IsIndoors()) then
+        return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+      end
+      -- The same goes for being diesmounted in certain outdoor areas
+      -- (e.g. certain quest givers like Great-father Winter).
+      -- This can be checked by trying if the last active mount is usable.
+      -- Interestingly this does not work for entering indoors, so we still need the check above.
+      local _, _, _, _, lastActiveMountUsable = C_MountJournal.GetMountInfoByID(self.db.char.lastActiveMount)
+      if (not lastActiveMountUsable) then
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
       end
 

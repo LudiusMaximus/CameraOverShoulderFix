@@ -11,7 +11,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [4]   = 0.71,    -- Aquatic
       [5]   = 0.83,    -- Bear
       [27]  = 0.52,    -- Swift Flight
-      [29]  = 0.52,    -- Flight          -- Assumed same as Swift Flight (not tested).
+      [29]  = 0.52,    -- Flight
       [31]  = 0.933,   -- Moonkin
     },
     [3] = {   -- female
@@ -21,7 +21,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [4]   = 0.625,   -- Aquatic
       [5]   = 0.73,    -- Bear
       [27]  = 0.47,    -- Swift Flight
-      [29]  = 0.47,    -- Flight          -- Assumed same as Swift Flight (not tested).
+      [29]  = 0.47,    -- Flight
       [31]  = 0.83,    -- Moonkin
     },
   },
@@ -34,7 +34,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [4]   = 0.515,   -- Aquatic
       [5]   = 0.68,    -- Bear
       [27]  = 0.38,    -- Swift Flight
-      [29]  = 0.38,    -- Flight          -- Assumed same as Swift Flight (not tested).
+      [29]  = 0.38,    -- Flight
       [31]  = 0.72,    -- Moonkin
     },
     [3] = {   -- female
@@ -44,7 +44,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [4]   = 0.515,   -- Aquatic
       [5]   = 0.68,    -- Bear
       [27]  = 0.38,    -- Swift Flight
-      [29]  = 0.38,    -- Flight          -- Assumed same as Swift Flight (not tested).
+      [29]  = 0.38,    -- Flight
       [31]  = 0.72,    -- Moonkin
     },
   }

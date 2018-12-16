@@ -15,7 +15,7 @@ cosFix.mountIdToShoulderOffsetFactor = {
   [76]  = 4.3,   -- Black War Kodo
   [101] = 4.3,   -- Great White Kodo
   [102] = 4.3,   -- Great Gray Kodo
-  [103] = 4.3,  -- Great Brown Kodo
+  [103] = 4.3,   -- Great Brown Kodo
   [152] = 6.45,  -- Red Hawkstryder
   [157] = 6.45,  -- Purple Hawkstryder
   [158] = 6.45,  -- Blue Hawkstryder
@@ -24,6 +24,7 @@ cosFix.mountIdToShoulderOffsetFactor = {
   [268] = 2.5,   -- Albino Drake
   [309] = 4.7,   -- White Kodo
   [435] = 7.6,   -- Mountain Horse
+  [651] = 5.6,   -- Warlord's Deathwheel
   [780] = 5.4,   -- Felsaber
 
 };

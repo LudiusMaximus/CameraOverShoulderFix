@@ -12,7 +12,7 @@ local defaults = {
     cvars = {
       test_cameraOverShoulder = 1.5,
       test_cameraDynamicPitch = 1,
-      test_cameraDynamicPitchBaseFovPad = 0.35,
+      test_cameraDynamicPitchBaseFovPad = 0.5,
       test_cameraDynamicPitchBaseFovPadFlying = 1,
       test_cameraDynamicPitchBaseFovPadDownScale = 1,
     }
