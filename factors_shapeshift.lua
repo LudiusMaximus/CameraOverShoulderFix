@@ -11,7 +11,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [4]   = 0.71,    -- Aquatic
       [5]   = 0.83,    -- Bear
       [27]  = 0.52,    -- Swift Flight
-      [29]  = 0.52,    -- Flight
+      [29]  = 0.545,   -- Flight
       [31]  = 0.933,   -- Moonkin
     },
     [3] = {   -- female
@@ -76,6 +76,6 @@ cosFix.demonhunterFormToShoulderOffsetFactor = {
 
 
 cosFix.shamanGhostwolfToShoulderOffsetFactor = {
-  [16]  = 0.775,  -- Ghostwolf
+  [16]  = 0.758,  -- Ghostwolf
 };
 

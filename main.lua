@@ -10,9 +10,7 @@ function CosFixSetCVar(...)
   local variable, value = ...
   
   if (variable == "test_cameraOverShoulder") then
-    print("CosFixSetCVar()", value)
     value = value * cosFix:CorrectShoulderOffset(value) * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom())
-    -- print("CosFixSetCVar()", value)
   end
   
   CosFix_OriginalSetCVar(variable, value)
@@ -56,8 +54,11 @@ function CosFix_CameraZoomIn(...)
   end
   targetZoom = targetZoom or currentZoom
   targetZoom = math.max(0, targetZoom - increments)
-
-  local userSetShoulderOffset = cosFix.db.profile.cvars["test_cameraOverShoulder"]
+  
+  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+  if IsAddOnLoaded("DynamicCam") then
+    userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+  end
   local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * cosFix:CorrectShoulderOffset(userSetShoulderOffset)
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
@@ -77,7 +78,10 @@ function CosFix_CameraZoomOut(...)
   targetZoom = targetZoom or currentZoom;
   targetZoom = math.min(39, targetZoom + increments)
 
-  local userSetShoulderOffset = cosFix.db.profile.cvars["test_cameraOverShoulder"]
+  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+  if IsAddOnLoaded("DynamicCam") then
+    userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+  end
   local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * cosFix:CorrectShoulderOffset(userSetShoulderOffset)
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 

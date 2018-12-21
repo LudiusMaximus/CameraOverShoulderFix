@@ -24,6 +24,7 @@ cosFix.mountIdToShoulderOffsetFactor = {
   [268] = 2.5,   -- Albino Drake
   [309] = 4.7,   -- White Kodo
   [435] = 7.6,   -- Mountain Horse
+  [547] = 5.7,   -- Hearthsteed
   [651] = 5.6,   -- Warlord's Deathwheel
   [780] = 5.4,   -- Felsaber
 

@@ -145,9 +145,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     else
       local vehicleName = GetUnitName("vehicle", false)
       if (vehicleName == nil) then
-        cosFix:DebugPrint("TODO: Just entering unknown vehicle with ID " .. vehicleId .. ". Zoom in or out to get message including vehicle name!")
+        cosFix:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". Zoom in or out to get message including vehicle name!")
       else
-        cosFix:DebugPrint("TODO: Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known...")
+        cosFix:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known...")
       end
 
       -- Default for all unknown vehicles...
@@ -203,7 +203,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
               returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
             else
               local creatureName = C_MountJournal.GetMountInfoByID(self.db.char.lastActiveMount)
-              cosFix:DebugPrint("TODO: Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known...")
+              cosFix:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known...")
               -- Default for all other mounts...
               returnValue = mountedFactor * 6
             end
@@ -217,7 +217,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
         else
           local creatureName = C_MountJournal.GetMountInfoByID(mountId)
-          cosFix:DebugPrint("TODO: Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known...")
+          cosFix:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known...")
           -- Default for all other mounts...
           returnValue = mountedFactor * 6
         end
@@ -257,23 +257,24 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           if (self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId]) then
             returnValue = self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId]
           else
-            cosFix:DebugPrint("TODO: " .. raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factor for form id " .. formId .. " not yet known...")
+            cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factor for form id " .. formId .. " not yet known...")
             returnValue = 1
           end
         else
-          cosFix:DebugPrint("TODO: " .. raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factors not yet known...")
+          cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factors not yet known...")
           returnValue = 1
         end
       else
-        cosFix:DebugPrint("TODO: " .. raceFile .. " druid form factors not yet known...")
+        cosFix:DebugPrint(raceFile .. " druid form factors not yet known...")
         returnValue = 1
       end
       
     elseif (formId == 16) then
+      -- print("...Ghostwolf")
       returnValue = self.shamanGhostwolfToShoulderOffsetFactor[formId]
       
     else
-      cosFix:DebugPrint("TODO: Shapeshift form '" .. formId .. "' not yet known...")
+      cosFix:DebugPrint("Shapeshift form '" .. formId .. "' not yet known...")
       
     end
 
@@ -298,7 +299,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           if (self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]) then
             returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
           else
-            cosFix:DebugPrint("TODO: " .. raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Havoc' not yet known...")
+            cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Havoc' not yet known...")
             returnValue = 1
           end
           
@@ -310,7 +311,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           if (self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]) then
             returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]
           else
-            cosFix:DebugPrint("TODO: " .. raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Vengeance' not yet known...")
+            cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Vengeance' not yet known...")
             returnValue = 1
           end
           
@@ -355,7 +356,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         if (self.raceAndGenderToShoulderOffsetFactor[raceFile]) then
           returnValue = self.raceAndGenderToShoulderOffsetFactor[raceFile][genderCode]
         else
-          cosFix:DebugPrint("TODO: Race " .. raceFile .. " not yet known...")
+          cosFix:DebugPrint("Race " .. raceFile .. " not yet known...")
           returnValue = 1
         end
       end

@@ -6,7 +6,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 -- This is needed to get the timing of changing the shoulder offset as good as possible
--- for some model changes.
+-- for some model changes. The Ace3 ScheduleTimer is too slow for some extreme cases.
 -- http://wowwiki.wikia.com/wiki/Wait
 
 local cosFix_waitTable = {}
@@ -50,7 +50,7 @@ end
 cosFix.activateNextUnitAura = false
 
 -- Needed for when changing from shapeshifted back to Druid.
-cosFix.activateNextUnitModelChanged = false
+cosFix.updateShapeshiftFormCounter = 0
 
 -- The cooldown of "Two Forms" is shorter than it actually takes to perform the transformation.
 -- This flag indicates that a change into Worgen with "Two Forms" is in progress.
@@ -77,10 +77,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     return
   end
 
-
-  -- TODO: When access function for DynamicCam stopEasingShoulderOffset() is available.
-  -- Maybe best to do with a pre-hook!
-
   -- Got to stop shoulder offset easing that might already be in process.
   -- E.g. an easing started in ExitSituation() called at the same time as
   -- the execution of PLAYER_MOUNT_DISPLAY_CHANGED.
@@ -89,17 +85,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- calculate the shoulder offset for it and start the shoulder offset ease.
   -- Then comes the UPDATE_SHAPESHIFT_FORM event triggering ShoulderOffsetEventHandler(),
   -- but its new shoulder offset value will be overridden by the ongoing easing.
-
   if IsAddOnLoaded("DynamicCam") then
     self:AccessStopEasingShoulderOffset()
   end
 
 
-
   local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
   if IsAddOnLoaded("DynamicCam") then
-    -- TODO: Should get the shoulder offset of current situation!
-    userSetShoulderOffset = DynamicCam.db.profile.defaultCvars["test_cameraOverShoulder"]
+    userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
   end
 
   local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
@@ -165,7 +158,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           end
 
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
-          return cosFix_wait(0.06, cosFix.OriginalSetCVar, cosFix, "test_cameraOverShoulder", correctedShoulderOffset)
+          return cosFix_wait(0.06, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
 
         else
           -- print("Changing into Worgen.")
@@ -188,17 +181,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     if (unitName ~= "player") then
       return
     end
-
-    -- This is triggered when turning from druid shapeshif back into normal.
-    -- This is particularly also executed for Worgen druids, so the rest below is
-    -- not checked then. But it works fine!
-    if (self.activateNextUnitModelChanged == true) then
-      self.activateNextUnitModelChanged = false
-      -- print("UNIT_MODEL_CHANGED executing!")
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-      return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-    end
-
 
     local _, raceFile = UnitRace("player")
     if ((raceFile == "Worgen")) then
@@ -303,7 +285,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- -- And also the subsequent UNIT_MODEL_CHANGED is still too early.
         -- -- That is why we have to use the cosFix_wait timer instead.
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-        return cosFix_wait(0.01, cosFix.OriginalSetCVar, cosFix, "test_cameraOverShoulder", correctedShoulderOffset)
+        return cosFix_wait(0.01, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
 
       else
         -- print("You are turning into normal Shaman!")
@@ -334,36 +316,51 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       if (formId ~= nil) then
         -- print("You are turning into something (" .. formId .. ").")
 
-        -- When turning from druid into shapeshift, two UPDATE_SHAPESHIFT_FORM
-        -- are executed, the first of which still gets formId == nil.
-        -- So it will set activateNextUnitAura to true which we are revoking here.
-        self.activateNextUnitAura = false
-
-
         -- Worgen druids automatically turn into Worgen form when turning into a druid form.
         self.db.char.lastWorgenModelId = self.modelId["Worgen"][UnitSex("player")]
+        
+        -- When turning into shapeshift, two UPDATE_SHAPESHIFT_FORM
+        -- are executed, the first of which still gets formId == nil (for normal) or the previous formId.
+        -- for the latter we have to stop the timer.
+        cosFix_waitTable = {}
 
-
+        -- Remember the current formId, because we have to use different timings
+        -- when turning back into normal depending on the current shapeshift form.
+        self.db.char.lastformId = formId
+        
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-
-        -- -- TODO: Still not happy with these transitions... :-(
-        -- if (formId == 5) then
-          -- -- For bear this works quite reliable!
-          -- return cosFix_wait(0.05, cosFix.OriginalSetCVar, cosFix, "test_cameraOverShoulder", correctedShoulderOffset)
-        -- end
-        -- -- When turning from bear into another form, we have to clear the currently queued CosFix_OriginalSetCVar
-        -- -- such that the bear factor does not come afterwards.
-        -- cosFix_waitTable = {}
-
-        return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+        return cosFix_wait(0.02, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
 
       else
         -- print("You are turning into normal Druid!")
-
-        -- Do not change the shoulder offset here.
-        -- Wait until the next UNIT_MODEL_CHANGED for perfect timing.
-        self.activateNextUnitModelChanged = true
-        return
+        
+        -- When turning from travel form back to normal, it is fine to use a constant timer.
+        if ((self.db.char.lastformId == 3) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
+          -- When turning from travel form into normal druid, there is always a first
+          -- UPDATE_SHAPESHIFT_FORM where still the shapeshifted form is detected.
+          -- This will start a timer, which we have to revoke here.
+          cosFix_waitTable = {}
+          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+          self.db.char.lastformId = nil
+          return cosFix_wait(0.01, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+        end
+        
+        
+        -- Are you currently turning from a non-travel form back into normal.
+        -- To get the perfect timing we have to take the next UPDATE_SHAPESHIFT_FORM event.
+        if (self.db.char.lastformId ~= nil) then
+          self.db.char.lastformId = nil
+          self.updateShapeshiftFormCounter = 1
+        else
+          if (self.updateShapeshiftFormCounter == 0) then
+            local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+            return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+          else
+            self.updateShapeshiftFormCounter = self.updateShapeshiftFormCounter - 1
+            return
+          end
+        end
+        
       end
     end -- (englishClass == "DRUID")
 
@@ -450,18 +447,18 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         if (spellId == 162264) then
           -- print("UNIT_AURA for METAMORPHOSIS HAVOC")
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-          return cosFix_wait(0.69, cosFix.OriginalSetCVar, cosFix, "test_cameraOverShoulder", correctedShoulderOffset)
+          return cosFix_wait(0.69, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
         elseif (spellId == 187827) then
           -- print("UNIT_AURA for METAMORPHOSIS VENGEANCE")
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-          return cosFix_wait(0.966, cosFix.OriginalSetCVar, cosFix, "test_cameraOverShoulder", correctedShoulderOffset)
+          return cosFix_wait(0.966, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
         end
       end
 
       -- Turning into normal Demon Hunter.
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       -- print("UNIT_AURA for DEMON HUNTER back to normal")
-      return cosFix_wait(0.082, cosFix.OriginalSetCVar, cosFix, "test_cameraOverShoulder", correctedShoulderOffset)
+      return cosFix_wait(0.082, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
 
     end  -- (englishClass == "DEMONHUNTER")
 
