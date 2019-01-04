@@ -3,6 +3,63 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 
+-- Use this code to copy stuff from the eventtrace window into clipboard.
+-- Thanks a lot to Fizzlemizz:
+-- https://www.wowinterface.com/forums/showthread.php?t=56917
+local TFrame
+SLASH_MYTRACE1 = "/tt"
+SlashCmdList["MYTRACE"] = function(msg)
+  if not EventTraceFrame then print("ETRACE NOT OPEN") return end
+  if not TFrame then
+    TFrame = CreateFrame("Button", "FizzleEventList", UIParent)
+    TFrame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile="Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, insets = {left = 8, right = 8, top = 8, bottom = 8},})
+    TFrame:SetBackdropColor(0, 0, 0)
+    TFrame:SetPoint("RIGHT", -12)
+    TFrame:SetSize(400, 400)
+    TFrame.SF = CreateFrame("ScrollFrame", "$parent_DF", TFrame, "UIPanelScrollFrameTemplate")
+    TFrame.SF:SetPoint("TOPLEFT", TFrame, 12, -30)
+    TFrame.SF:SetPoint("BOTTOMRIGHT", TFrame, -30, 10)
+    TFrame.Text = CreateFrame("EditBox", nil, TFrame)
+    TFrame.Text:SetMultiLine(true)
+    TFrame.Text:SetSize(180, 170)
+    TFrame.Text:SetPoint("TOPLEFT", TFrame.SF)
+    TFrame.Text:SetPoint("BOTTOMRIGHT", TFrame.SF)
+    TFrame.Text:SetMaxLetters(99999)
+    TFrame.Text:SetFontObject(GameFontNormal)
+    TFrame.Text:SetAutoFocus(false)
+    TFrame.Text:SetScript("OnEscapePressed", function(self)self:ClearFocus() end)
+    TFrame.SF:SetScrollChild(TFrame.Text)
+    TFrame.Close = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
+    TFrame.Close:SetSize(24, 24)
+    TFrame.Close:SetPoint("TOPRIGHT", -8, -8)
+    TFrame.Close:SetText("X")
+    TFrame.Close:SetScript("OnClick", function(self) self:GetParent():Hide() end)
+    TFrame.Clear = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
+    TFrame.Clear:SetSize(24, 24)
+    TFrame.Clear:SetPoint("RIGHT", TFrame.Close, "LEFT", -1)
+    TFrame.Clear:SetText("R")
+    TFrame.Clear:SetScript("OnClick", function(self)
+      local t = self:GetParent().Text
+      local text = ""
+      for i=1, #EventTraceFrame.events do
+          text = text.."\n"..EventTraceFrame.events[i]
+      end
+      t:SetText("")
+      t:SetText(text)
+      t:ClearFocus()
+    end)
+    TFrame:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp")
+    TFrame:RegisterForDrag("LeftButton")
+    TFrame:SetMovable(true)
+    TFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    TFrame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() ValidateFramePosition(self) end)
+  else
+    TFrame:SetShown(not TFrame:IsShown())
+  end
+end
+
+
+
 
 
 -- This is needed to get the timing of changing the shoulder offset as good as possible
@@ -44,13 +101,48 @@ end
 
 
 
+
+
+
+-- TODO:   Change into cat/bear
+--         Mount up
+--         Change into travel form
+--         --> Weird jerk
+
+-- TODO:   Change into travel form
+--         Mount or use hearthstone
+--         --> Weird jerk
+
+
+
+
+
+
+
+
+
 -- While dismounting we need to execute a shoulder offset change at the time
 -- of the next UNIT_AURA event; but only then. So we use this variable as a flag.
 -- We also need this for the perfect timing while changing from Ghostwolf back to Shaman.
 cosFix.activateNextUnitAura = false
 
--- Needed for when changing from shapeshifted back to Druid.
+
+
+
+
+-- Needed for Druid shapeshift changes.
 cosFix.updateShapeshiftFormCounter = 0
+cosFix.waitingForUnitSpellcastSentSucceeded = false
+cosFix.unitSpellcastSentObserved = false
+
+-- Needed for changing into bear.
+cosFix.activateNextHealthFrequent = false
+
+-- Needed for changing into cat.
+cosFix.activateNextActionbarUpdateCooldown = false
+
+
+
 
 -- The cooldown of "Two Forms" is shorter than it actually takes to perform the transformation.
 -- This flag indicates that a change into Worgen with "Two Forms" is in progress.
@@ -70,7 +162,7 @@ cosFix.skipNextWorgenUnitModelChanged = 0
 
 function cosFix:ShoulderOffsetEventHandler(event, ...)
 
-  -- print("ShoulderOffsetEventHandler got event:", event, ...)
+  print("ShoulderOffsetEventHandler got event:", event, ...)
 
   -- If both shoulder offset adjustments are disabled, do nothing!
   if (not self.db.profile.modelIndependentShoulderOffset and not self.db.profile.shoulderOffsetZoom) then
@@ -98,6 +190,10 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
 
 
+
+
+
+
   -- Needed for Worgen form change and Demon Hunter Metamorphosis.
   if (event == "UNIT_SPELLCAST_SUCCEEDED") then
     local unitName, _, spellId = ...
@@ -106,6 +202,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     if (unitName ~= "player") then
       return
     end
+
 
     local _, raceFile = UnitRace("player")
     if ((raceFile == "Worgen")) then
@@ -181,6 +278,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     if (unitName ~= "player") then
       return
     end
+
 
     local _, raceFile = UnitRace("player")
     if ((raceFile == "Worgen")) then
@@ -272,6 +370,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.skipNextWorgenUnitModelChanged = 3
     end
 
+
   -- Needed for shapeshifting.
   elseif (event == "UPDATE_SHAPESHIFT_FORM") then
 
@@ -303,7 +402,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- timers and start a new one.
         return
       end
-    -- end (englishClass == "SHAMAN")
+
+
     elseif (englishClass == "DRUID") then
 
       local _, raceFile = UnitRace("player")
@@ -314,57 +414,151 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       local formId = GetShapeshiftFormID(true)
       if (formId ~= nil) then
-        -- print("You are turning into something (" .. formId .. ").")
+        print("You are turning into something (" .. formId .. ").")
 
         -- Worgen druids automatically turn into Worgen form when turning into a druid form.
         self.db.char.lastWorgenModelId = self.modelId["Worgen"][UnitSex("player")]
-        
+
         -- When turning into shapeshift, two UPDATE_SHAPESHIFT_FORM
-        -- are executed, the first of which still gets formId == nil (for normal) or the previous formId.
-        -- for the latter we have to stop the timer.
+        -- are executed, the first of which still gets formId == nil (if normal) or the previous formId (if shapeshifted).
+        -- For the former we set updateShapeshiftFormCounter back to 0.
+        -- For the latter we have to stop the timer.
+        self.updateShapeshiftFormCounter = 0
         cosFix_waitTable = {}
 
         -- Remember the current formId, because we have to use different timings
         -- when turning back into normal depending on the current shapeshift form.
         self.db.char.lastformId = formId
-        
-        local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-        return cosFix_wait(0.02, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+
+        -- This is needed to register when we are changing from one druid form
+        -- into travel form. Because then we have to
+        self.waitingForUnitSpellcastSentSucceeded = false
+        self.unitSpellcastSentObserved = false
+
+
+        if (formId == 1) then
+          -- print("cat")
+          self.activateNextUnitAura = false
+          self.activateNextHealthFrequent = false
+          self.activateNextActionbarUpdateCooldown = true
+          return
+
+        elseif (formId == 5) then
+          -- print("bear")
+          self.activateNextUnitAura = false
+          self.activateNextHealthFrequent = true
+          self.activateNextActionbarUpdateCooldown = false
+          return
+
+        else
+          -- print("travel or tree of light...")
+          self.activateNextUnitAura = false
+          self.activateNextHealthFrequent = false
+          self.activateNextActionbarUpdateCooldown = false
+          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+          return cosFix_wait(0.018, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+
+        end
 
       else
-        -- print("You are turning into normal Druid!")
-        
-        -- When turning from travel form back to normal, it is fine to use a constant timer.
+        print("You are turning into normal Druid!")
+
+
         if ((self.db.char.lastformId == 3) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
+
           -- When turning from travel form into normal druid, there is always a first
           -- UPDATE_SHAPESHIFT_FORM where still the shapeshifted form is detected.
           -- This will start a timer, which we have to revoke here.
           cosFix_waitTable = {}
-          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+
           self.db.char.lastformId = nil
-          return cosFix_wait(0.01, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
         end
-        
-        
-        -- Are you currently turning from a non-travel form back into normal.
-        -- To get the perfect timing we have to take the next UPDATE_SHAPESHIFT_FORM event.
+
+
+        -- When turning from a non-travel form back into normal, we have to use the next
+        -- UPDATE_SHAPESHIFT_FORM events, because for some reason the shoulder offset change
+        -- occurs sometimes sooner, sometimes later after the first UPDATE_SHAPESHIFT_FORM.
         if (self.db.char.lastformId ~= nil) then
           self.db.char.lastformId = nil
           self.updateShapeshiftFormCounter = 1
+          print("Setting counter to", self.updateShapeshiftFormCounter)
+
+          self.waitingForUnitSpellcastSentSucceeded = true
         else
           if (self.updateShapeshiftFormCounter == 0) then
-            local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-            return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+
+            if (self.unitSpellcastSentObserved == false) then
+              print("Reached updateShapeshiftFormCounter ==", self.updateShapeshiftFormCounter)
+              local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+              return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+            else
+              print("Doing nothing because you are changing from a non-travel form into travel form.")
+              self.unitSpellcastSentObserved = false
+              return
+            end
+
           else
             self.updateShapeshiftFormCounter = self.updateShapeshiftFormCounter - 1
+            print("Decreasing updateShapeshiftFormCounter to", self.updateShapeshiftFormCounter)
             return
           end
         end
-        
+
       end
     end -- (englishClass == "DRUID")
 
     -- print("... doing nothing!")
+
+
+
+
+
+
+  -- Needed for changing into bear.
+  elseif (event == "UNIT_HEALTH_FREQUENT") then
+    if (self.activateNextHealthFrequent == true) then
+      self.activateNextUnitAura = false
+      self.activateNextHealthFrequent = false
+      self.activateNextActionbarUpdateCooldown = false
+
+      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+      return cosFix_wait(0.05, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+    end
+
+
+  -- Needed for changing into cat.
+  elseif (event == "ACTIONBAR_UPDATE_COOLDOWN") then
+    if (self.activateNextActionbarUpdateCooldown == true) then
+      self.activateNextUnitAura = false
+      self.activateNextHealthFrequent = false
+      self.activateNextActionbarUpdateCooldown = false
+
+      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+      return cosFix_wait(0.05, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+    end
+
+
+  -- Needed for Druid shapeshift changes.
+  elseif (event == "UNIT_SPELLCAST_SENT") then
+    local unitName, _, _, spellId = ...
+
+    -- Only do something if UNIT_SPELLCAST_SENT is for "player".
+    if (unitName ~= "player") then
+      return
+    end
+
+    -- Trying to determine if we are currently changing from
+    -- one druid shapeshift form into travel form.
+    if ((self.waitingForUnitSpellcastSentSucceeded == true) and (spellId == 783)) then
+      self.waitingForUnitSpellcastSentSucceeded = false
+      self.unitSpellcastSentObserved = true
+    end
+
+
+
+
+
+
 
 
   -- Needed for mounting and entering taxis.
@@ -424,9 +618,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       return
     end
 
-    -- This is flag is set while dismounting, while changing from Ghostwolf into Shaman.
+    -- This is flag is set while dismounting and while changing from Ghostwolf into Shaman.
     if (self.activateNextUnitAura == true) then
       self.activateNextUnitAura = false
+      self.activateNextHealthFrequent = false
+      self.activateNextActionbarUpdateCooldown = false
+
       -- print("UNIT_AURA executing!")
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
@@ -493,6 +690,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
 
+
   -- Needed for being teleported into a dungeon while mounted,
   -- because when entering you get automatically dismounted
   -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
@@ -504,9 +702,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 end
 
 
-
-
 function cosFix:RegisterEvents()
+
 
   -- Needed for Worgen form change.
   self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "ShoulderOffsetEventHandler")
@@ -517,15 +714,30 @@ function cosFix:RegisterEvents()
   -- To suppress Worgen UNIT_MODEL_CHANGED after loading screen.
   self:RegisterEvent("LOADING_SCREEN_DISABLED", "ShoulderOffsetEventHandler")
 
+
+
   -- Needed for shapeshifting.
   self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
+
+
+
+  -- Needed for changing into bear.
+  self:RegisterEvent("UNIT_HEALTH_FREQUENT", "ShoulderOffsetEventHandler")
+
+  -- Needed for changing into cat.
+  self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "ShoulderOffsetEventHandler")
+
+  -- Needed to know if you change from a non-travel form into travel form.
+  self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
+
+
+
 
   -- Needed for mounting and entering taxis.
   self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
 
   -- Needed to determine the right time to change shoulder offset when dismounting,
-  -- changing from Shaman Ghostwolf into normal, from shapeshifted Druid into normal,
-  -- and for Demon Hunter Metamorphosis.
+  -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.
   self:RegisterEvent("UNIT_AURA", "ShoulderOffsetEventHandler")
 
   -- Needed for vehicles.
