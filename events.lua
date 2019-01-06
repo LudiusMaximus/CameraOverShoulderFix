@@ -2,7 +2,6 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
-
 -- Use this code to copy stuff from the eventtrace window into clipboard.
 -- Thanks a lot to Fizzlemizz:
 -- https://www.wowinterface.com/forums/showthread.php?t=56917
@@ -109,14 +108,29 @@ end
 --         Change into travel form
 --         --> Weird jerk
 
+-- Solution: in this situation you do not need any delay. But there is no way
+-- of identifying these just via events. So you must somehow save this in variables...
+
+-- So. When mounting, check if you were cat previously. Store this in a volatile variable
+-- (must not persist longer than reloads) and then when turning into travel form, check
+-- for this variable.
+
+
 -- TODO:   Change into travel form
 --         Mount or use hearthstone
 --         --> Weird jerk
 
+-- TODO:   Change to non-travel form
+--         be indoors
+--         (try to) change into travel form
+--         --> Must change to normal druid shoulder offset!!
 
 
 
-
+-- NOT TODO: Sometimes after fresh starting the game you will see camera jerks while changing
+-- into cat form. Just wait for some time. It will eventually go away by itself.
+-- There is no difference in the occuring events whenever this happens, so
+-- I could not find a way to identify this further.
 
 
 
@@ -132,15 +146,14 @@ cosFix.activateNextUnitAura = false
 
 -- Needed for Druid shapeshift changes.
 cosFix.updateShapeshiftFormCounter = 0
+
+
 cosFix.waitingForUnitSpellcastSentSucceeded = false
 cosFix.unitSpellcastSentObserved = false
 
+
 -- Needed for changing into bear.
 cosFix.activateNextHealthFrequent = false
-
--- Needed for changing into cat.
-cosFix.activateNextActionbarUpdateCooldown = false
-
 
 
 
@@ -437,32 +450,37 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
         if (formId == 1) then
-          -- print("cat")
-          self.activateNextUnitAura = false
-          self.activateNextHealthFrequent = false
-          self.activateNextActionbarUpdateCooldown = true
-          return
+          print("cat")
+          
+          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+          return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+   
 
         elseif (formId == 5) then
-          -- print("bear")
+          print("bear")
+
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = true
-          self.activateNextActionbarUpdateCooldown = false
           return
+          
 
         else
-          -- print("travel or tree of light...")
+          print("travel or tree of light...")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = false
-          self.activateNextActionbarUpdateCooldown = false
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-          return cosFix_wait(0.018, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+          
 
+          return cosFix_wait(0.018, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+          
+          -- return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+          
+
+            
         end
 
       else
         print("You are turning into normal Druid!")
-
 
         if ((self.db.char.lastformId == 3) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
 
@@ -511,27 +529,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
 
-
-
-
   -- Needed for changing into bear.
   elseif (event == "UNIT_HEALTH_FREQUENT") then
     if (self.activateNextHealthFrequent == true) then
+    
+      print("Executing UNIT_HEALTH_FREQUENT")
+    
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
-      self.activateNextActionbarUpdateCooldown = false
-
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-      return cosFix_wait(0.05, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
-    end
-
-
-  -- Needed for changing into cat.
-  elseif (event == "ACTIONBAR_UPDATE_COOLDOWN") then
-    if (self.activateNextActionbarUpdateCooldown == true) then
-      self.activateNextUnitAura = false
-      self.activateNextHealthFrequent = false
-      self.activateNextActionbarUpdateCooldown = false
 
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       return cosFix_wait(0.05, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
@@ -553,12 +558,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.waitingForUnitSpellcastSentSucceeded = false
       self.unitSpellcastSentObserved = true
     end
-
-
-
-
-
-
+    
 
 
   -- Needed for mounting and entering taxis.
@@ -620,11 +620,13 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
     -- This is flag is set while dismounting and while changing from Ghostwolf into Shaman.
     if (self.activateNextUnitAura == true) then
+    
+      print("Executing UNIT_AURA")
+    
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
-      self.activateNextActionbarUpdateCooldown = false
 
-      -- print("UNIT_AURA executing!")
+      
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
     end
@@ -719,18 +721,13 @@ function cosFix:RegisterEvents()
   -- Needed for shapeshifting.
   self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
 
-
-
   -- Needed for changing into bear.
   self:RegisterEvent("UNIT_HEALTH_FREQUENT", "ShoulderOffsetEventHandler")
 
-  -- Needed for changing into cat.
-  self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "ShoulderOffsetEventHandler")
-
   -- Needed to know if you change from a non-travel form into travel form.
   self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
-
-
+  
+  
 
 
   -- Needed for mounting and entering taxis.
