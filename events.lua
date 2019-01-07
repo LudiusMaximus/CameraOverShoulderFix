@@ -451,32 +451,30 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         if (formId == 1) then
           print("cat")
-          
+          self.activateNextUnitAura = false
+          self.activateNextHealthFrequent = false
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-          return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-   
+
+          -- Sometimes you need this, sometimes the below... WTF
+          return cosFix_wait(0.06, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+          -- return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
         elseif (formId == 5) then
           print("bear")
-
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = true
           return
-          
 
         else
           print("travel or tree of light...")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = false
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-          
 
+          -- Sometimes you need this, sometimes the below... WTF
           return cosFix_wait(0.018, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
-          
           -- return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-          
 
-            
         end
 
       else
@@ -532,9 +530,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- Needed for changing into bear.
   elseif (event == "UNIT_HEALTH_FREQUENT") then
     if (self.activateNextHealthFrequent == true) then
-    
+
       print("Executing UNIT_HEALTH_FREQUENT")
-    
+
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
@@ -558,7 +556,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.waitingForUnitSpellcastSentSucceeded = false
       self.unitSpellcastSentObserved = true
     end
-    
+
 
 
   -- Needed for mounting and entering taxis.
@@ -620,13 +618,13 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
     -- This is flag is set while dismounting and while changing from Ghostwolf into Shaman.
     if (self.activateNextUnitAura == true) then
-    
+
       print("Executing UNIT_AURA")
-    
+
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      
+
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
     end
@@ -726,8 +724,8 @@ function cosFix:RegisterEvents()
 
   -- Needed to know if you change from a non-travel form into travel form.
   self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
-  
-  
+
+
 
 
   -- Needed for mounting and entering taxis.
