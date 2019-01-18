@@ -102,39 +102,6 @@ end
 
 
 
-
--- TODO:   Change into cat/bear
---         Mount up
---         Change into travel form
---         --> Weird jerk
-
--- Solution: in this situation you do not need any delay. But there is no way
--- of identifying these just via events. So you must somehow save this in variables...
-
--- So. When mounting, check if you were cat previously. Store this in a volatile variable
--- (must not persist longer than reloads) and then when turning into travel form, check
--- for this variable.
-
-
--- TODO:   Change into travel form
---         Mount or use hearthstone
---         --> Weird jerk
-
--- TODO:   Change to non-travel form
---         be indoors
---         (try to) change into travel form
---         --> Must change to normal druid shoulder offset!!
-
-
-
--- NOT TODO: Sometimes after fresh starting the game you will see camera jerks while changing
--- into cat form. Just wait for some time. It will eventually go away by itself.
--- There is no difference in the occuring events whenever this happens, so
--- I could not find a way to identify this further.
-
-
-
-
 -- While dismounting we need to execute a shoulder offset change at the time
 -- of the next UNIT_AURA event; but only then. So we use this variable as a flag.
 -- We also need this for the perfect timing while changing from Ghostwolf back to Shaman.
@@ -623,7 +590,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
-
 
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
