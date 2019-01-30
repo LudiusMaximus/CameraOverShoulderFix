@@ -220,8 +220,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- comes a little too late for a smooth shoulder offset change and there
           -- are no events in between. This is why we have to use cosFix_wait here.
 
-          -- Set lastWorgenModelId to Human.
-          self.db.char.lastWorgenModelId = targetWorgenFormAtSpellcast
+          -- Set lastModelId to Human.
+          self.db.char.lastModelId = targetWorgenFormAtSpellcast
 
           -- Remember that we are currently chaning into Human in order to suppress
           -- a shoulder offset change by the next UNIT_MODEL_CHANGED.
@@ -289,14 +289,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       modelFrame:SetUnit("player")
       local modelId = modelFrame:GetModelFileID()
 
-      -- print("UNIT_MODEL_CHANGED thinks you are", modelId, "while lastWorgenModelId is", self.db.char.lastWorgenModelId)
+      -- print("UNIT_MODEL_CHANGED thinks you are", modelId, "while lastModelId is", self.db.char.lastModelId)
 
       if (modelId == nil) then
-        -- print("Using the opposite of lastWorgenModelId.")
+        -- print("Using the opposite of lastModelId.")
         modelId = self:SwitchLastWorgenModelId()
 
         -- This will eventually set the right model ID.
-        self:SetLastWorgenModelId()
+        self:SetLastModelId()
       end
 
       -- print("Assuming you turn into", modelId)
@@ -394,10 +394,10 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       local formId = GetShapeshiftFormID(true)
       if (formId ~= nil) then
-        print("You are turning into something (" .. formId .. ").")
+        -- print("You are turning into something (" .. formId .. ").")
 
         -- Worgen druids automatically turn into Worgen form when turning into a druid form.
-        self.db.char.lastWorgenModelId = self.modelId["Worgen"][UnitSex("player")]
+        self.db.char.lastModelId = self.modelId["Worgen"][UnitSex("player")]
 
         -- When turning into shapeshift, two UPDATE_SHAPESHIFT_FORM
         -- are executed, the first of which still gets formId == nil (if normal) or the previous formId (if shapeshifted).
@@ -417,7 +417,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
         if (formId == 1) then
-          print("cat")
+          -- print("cat")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = false
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
@@ -427,13 +427,13 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
         elseif (formId == 5) then
-          print("bear")
+          -- print("bear")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = true
           return
 
         else
-          print("travel or tree of light...")
+          -- print("travel or tree of light...")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = false
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
@@ -445,7 +445,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         end
 
       else
-        print("You are turning into normal Druid!")
+        -- print("You are turning into normal Druid!")
 
         if ((self.db.char.lastformId == 3) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
 
@@ -464,25 +464,25 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         if (self.db.char.lastformId ~= nil) then
           self.db.char.lastformId = nil
           self.updateShapeshiftFormCounter = 1
-          print("Setting counter to", self.updateShapeshiftFormCounter)
+          -- print("Setting counter to", self.updateShapeshiftFormCounter)
 
           self.waitingForUnitSpellcastSentSucceeded = true
         else
           if (self.updateShapeshiftFormCounter == 0) then
 
             if (self.unitSpellcastSentObserved == false) then
-              print("Reached updateShapeshiftFormCounter ==", self.updateShapeshiftFormCounter)
+              -- print("Reached updateShapeshiftFormCounter ==", self.updateShapeshiftFormCounter)
               local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
               return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
             else
-              print("Doing nothing because you are changing from a non-travel form into travel form.")
+              -- print("Doing nothing because you are changing from a non-travel form into travel form.")
               self.unitSpellcastSentObserved = false
               return
             end
 
           else
             self.updateShapeshiftFormCounter = self.updateShapeshiftFormCounter - 1
-            print("Decreasing updateShapeshiftFormCounter to", self.updateShapeshiftFormCounter)
+            -- print("Decreasing updateShapeshiftFormCounter to", self.updateShapeshiftFormCounter)
             return
           end
         end
@@ -498,7 +498,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   elseif (event == "UNIT_HEALTH_FREQUENT") then
     if (self.activateNextHealthFrequent == true) then
 
-      print("Executing UNIT_HEALTH_FREQUENT")
+      -- print("Executing UNIT_HEALTH_FREQUENT")
 
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
@@ -534,7 +534,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
 
-      -- Sometimes there is no SPELL_UPDATE_USABLE after leaving a taxi.
+      -- Sometimes there is no UNIT_AURA after leaving a taxi.
       -- We can then set the value unmounted immedeately.
       if (self.db.char.isOnTaxi) then
         self.db.char.isOnTaxi = false
@@ -554,11 +554,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       end
 
 
-      -- Change the shoulder offset once here and then again with the next SPELL_UPDATE_USABLE.
+      -- Change the shoulder offset once here and then again with the next UNIT_AURA.
       self.activateNextUnitAura = true
 
       -- When shoulder offset is greater than 0, we need to set it to 10 times its actual value
-      -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next SPELL_UPDATE_USABLE.
+      -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next UNIT_AURA.
+      
+      -- TODO: When changed by "Temporal Illusion" (Caverns of time), the UNIT_AURA comes to early!
+      
       -- But only if modelIndependentShoulderOffset is enabled.
       if (self.db.profile.modelIndependentShoulderOffset and (correctedShoulderOffset > 0)) then
         correctedShoulderOffset = correctedShoulderOffset * 10
@@ -586,7 +589,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     -- This is flag is set while dismounting and while changing from Ghostwolf into Shaman.
     if (self.activateNextUnitAura == true) then
 
-      print("Executing UNIT_AURA")
+      -- print("Executing UNIT_AURA")
 
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false

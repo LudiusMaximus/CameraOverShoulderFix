@@ -41,15 +41,13 @@ end
 
 
 
--- When the model id cannot be determined, we start a timer to call SetLastWorgenModelId() again.
+-- When the model id cannot be determined, we start a timer to call SetLastModelId() again.
 -- Due to several events at the same time, it may happen that several calls happen at the same time.
 -- We only want one timer running at a time.
-cosFix.lastWorgenModelIdTimerId = nil
+cosFix.lastModelIdTimerId = nil
 
--- We call this in the end of UNIT_MODEL_CHANGED to be safe against "hiccups",
--- that my leave lastWorgenModelId at the wrong value.
-function cosFix:SetLastWorgenModelId()
-  -- print("SetLastWorgenModelId()")
+function cosFix:SetLastModelId()
+  -- print("SetLastModelId()")
 
   local modelFrame = CreateFrame("PlayerModel")
   modelFrame:SetUnit("player")
@@ -57,33 +55,38 @@ function cosFix:SetLastWorgenModelId()
   -- print(modelId)
   
   if (modelId == nil) then
-    if (self.lastWorgenModelIdTimerId == nil) or (self.lastWorgenModelIdTimerId and self:TimeLeft(self.lastWorgenModelIdTimerId) < 0) then
+    if (self.lastModelIdTimerId == nil) or (self.lastModelIdTimerId and self:TimeLeft(self.lastModelIdTimerId) < 0) then
       -- print("Restarting!")
-      self.lastWorgenModelIdTimerId = self:ScheduleTimer("SetLastWorgenModelId", 0.01)
+      self.lastModelIdTimerId = self:ScheduleTimer("SetLastModelId", 0.01)
     -- else
       -- print("Timer already running!")
     end
   else
-    -- print("SetLastWorgenModelId determined", modelId)
-    self.lastWorgenModelIdTimerId = nil
-    self.db.char.lastWorgenModelId = modelId
+    -- print("SetLastModelId determined", modelId)
+    self.lastModelIdTimerId = nil
+    self.db.char.lastModelId = modelId
+    
+    -- TODO: Set the shoulder offset again!
+    
   end
 end
 
--- Switch lastWorgenModelId without having to care about gender.
+
+
+-- Switch lastModelId of a Worgen without having to care about gender.
 function cosFix:SwitchLastWorgenModelId()
 
-  if     (self.db.char.lastWorgenModelId == self.modelId["Human"][2]) then
+  if     (self.db.char.lastModelId == self.modelId["Human"][2]) then
                              return self.modelId["Worgen"][2];   -- Human to Worgen male.
-  elseif (self.db.char.lastWorgenModelId == self.modelId["Worgen"][2]) then
+  elseif (self.db.char.lastModelId == self.modelId["Worgen"][2]) then
                              return self.modelId["Human"][2];   -- Worgen to Human male.
-  elseif (self.db.char.lastWorgenModelId == self.modelId["Human"][3]) then
+  elseif (self.db.char.lastModelId == self.modelId["Human"][3]) then
                              return self.modelId["Worgen"][3];   -- Human to Worgen female.
-  elseif (self.db.char.lastWorgenModelId == self.modelId["Worgen"][3]) then
+  elseif (self.db.char.lastModelId == self.modelId["Worgen"][3]) then
                              return self.modelId["Human"][3];   -- Worgen to Human female.
   else
     -- Should only happen right after logging in.
-    return self.db.char.lastWorgenModelId
+    return self.db.char.lastModelId
   end
 end
 
@@ -104,7 +107,7 @@ end
 function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
   -- print("CorrectShoulderOffset", offset)
-
+  
   -- If the "Correct Shoulder Offset" function is deactivated, we do not correct the offset.
   if (not self.db.profile.modelIndependentShoulderOffset) then
     return 1
@@ -286,7 +289,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     local _, englishClass = UnitClass("player")
     local _, raceFile = UnitRace("player")
     local genderCode = UnitSex("player")
-    -- print(englishClass, raceFile, genderCode)
+    print(englishClass, raceFile, genderCode)
 
     -- Check for Demon Hunter Metamorphosis.
     local metamorphosis = false
@@ -333,15 +336,14 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
         -- While dismounting, modelId may return nil.
         -- When this occurs we use the last known modelId and
-        -- call SetLastWorgenModelId(), to be sure to get the
+        -- call SetLastModelId(), to be sure to get the
         -- correct Worgen form eventually.
         if (modelId == nil) then
-          modelId = self.db.char.lastWorgenModelId
-          self:SetLastWorgenModelId()
+          modelId = self.db.char.lastModelId
+          self:SetLastModelId()
         else
-          self.db.char.lastWorgenModelId = modelId
+          self.db.char.lastModelId = modelId
         end
-        -- print(modelId)
 
         if ((modelId == self.modelId["Human"][2]) or (modelId == self.modelId["Human"][3])) then
           -- print("... in Human form")
@@ -351,14 +353,53 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           returnValue = self.raceAndGenderToShoulderOffsetFactor["Worgen"][genderCode]
         end
 
+        
+        
       -- All other races are less problematic.
       else
-        if (self.raceAndGenderToShoulderOffsetFactor[raceFile]) then
-          returnValue = self.raceAndGenderToShoulderOffsetFactor[raceFile][genderCode]
-        else
-          cosFix:DebugPrint("Race " .. raceFile .. " not yet known...")
+      
+        -- Try to determine the current form.
+        local modelFrame = CreateFrame("PlayerModel")
+        modelFrame:SetUnit("player")
+        local modelId = modelFrame:GetModelFileID()
+        print("modelId", modelId)
+      
+      
+        if (modelId == nil) then
+          modelId = self.db.char.lastModelId
+          self:SetLastModelId()
+        end
+        
+        
+
+        
+        -- TODO: modelId can still be nil if no lastModelId is stored.
+      
+      
+        -- When changing back from ghostwolf into shaman you may still get the ghostwolf model id.
+        -- Therefore we check if the model id is in the database and only use it then.
+        if (self.modelIdToShoulderOffsetFactor[modelId]) then
+          print("Using", modelId)
+          self.db.char.lastModelId = modelId
+          returnValue = self.modelIdToShoulderOffsetFactor[modelId]
+        -- Otherwise we use the previous model id.
+        elseif (self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId]) then
+          print("Using last", self.db.char.lastModelId)
+          returnValue = self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId]
+          self:SetLastModelId()
+        else 
+          cosFix:DebugPrint("Model ID " .. modelId .. " not yet known...")
           returnValue = 1
         end
+      
+      
+      
+        -- if (self.raceAndGenderToShoulderOffsetFactor[raceFile]) then
+          -- returnValue = self.raceAndGenderToShoulderOffsetFactor[raceFile][genderCode]
+        -- else
+          -- cosFix:DebugPrint("Race " .. raceFile .. " not yet known...")
+          -- returnValue = 1
+        -- end
       end
       
     end

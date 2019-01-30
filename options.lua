@@ -34,8 +34,12 @@ local optionsTable = {
       get = function() return cosFix.db.profile.modelIndependentShoulderOffset end,
       set = function(_, newValue)
               cosFix.db.profile.modelIndependentShoulderOffset = newValue
-              for variable, value in pairs(cosFix.db.profile.cvars) do
-                SetCVar(variable, value)
+              if IsAddOnLoaded("DynamicCam") then
+                DynamicCam:ApplyDefaultCameraSettings()
+              else
+                for variable, value in pairs(cosFix.db.profile.cvars) do
+                  SetCVar(variable, value)
+                end
               end
             end,
     },
@@ -49,10 +53,12 @@ local optionsTable = {
       get = function() return cosFix.db.profile.shoulderOffsetZoom end,
       set = function(_, newValue)
               cosFix.db.profile.shoulderOffsetZoom = newValue
-              -- TODO:
-              -- cosFix:shoulderOffsetZoomCheck()
-              for variable, value in pairs(cosFix.db.profile.cvars) do
-                SetCVar(variable, value)
+              if IsAddOnLoaded("DynamicCam") then
+                DynamicCam:ApplyDefaultCameraSettings()
+              else
+                for variable, value in pairs(cosFix.db.profile.cvars) do
+                  SetCVar(variable, value)
+                end
               end
             end,
     },
