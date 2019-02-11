@@ -185,7 +185,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
     local _, raceFile = UnitRace("player")
-    if ((raceFile == "Worgen")) then
+    if (raceFile == "Worgen") then
 
       -- We only use this for chaning from Worgen into Human,
       -- because then the UNIT_MODEL_CHANGED comes a little too late.
@@ -260,7 +260,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
     local _, raceFile = UnitRace("player")
-    if ((raceFile == "Worgen")) then
+    if (raceFile == "Worgen") then
 
       -- When logging in, there is also a call of UNIT_MODEL_CHANGED.
       -- But when we are mounted, we do not want this to have any effect
@@ -343,7 +343,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- These are suppresed here.
   elseif (event == "LOADING_SCREEN_DISABLED") then
     local _, raceFile = UnitRace("player")
-    if ((raceFile == "Worgen")) then
+    if (raceFile == "Worgen") then
       self.skipNextWorgenUnitModelChanged = 3
     end
 
@@ -384,7 +384,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     elseif (englishClass == "DRUID") then
 
       local _, raceFile = UnitRace("player")
-      if ((raceFile == "Worgen")) then
+      if (raceFile == "Worgen") then
         self.skipNextWorgenUnitModelChanged = 1
       end
 
@@ -394,7 +394,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- print("You are turning into something (" .. formId .. ").")
 
         -- Worgen druids automatically turn into Worgen form when turning into a druid form.
-        if ((raceFile == "Worgen")) then
+        if (raceFile == "Worgen") then
           self.db.char.lastModelId = self.raceAndGenderToModelId["Worgen"][UnitSex("player")]
         end
 
