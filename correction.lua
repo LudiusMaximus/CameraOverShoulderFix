@@ -3,6 +3,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 
+
 -- Returns the mount ID of the currently active mount if any.
 function cosFix:GetCurrentMount()
 
@@ -40,6 +41,25 @@ end
 
 
 
+function cosFix:GetCurrentModelId()
+  print("GetCurrentModelId()")
+
+  local modelFrame = CreateFrame("PlayerModel")
+  modelFrame:SetUnit("player")
+  local modelId = modelFrame:GetModelFileID()
+  print("modelId", modelId)
+
+  if (modelId == nil) then
+    modelId = self.db.char.lastModelId
+    self:SetLastModelId()
+  else
+    self.db.char.lastModelId = modelId
+  end
+
+  return modelId
+  
+end
+
 
 -- When the model id cannot be determined, we start a timer to call SetLastModelId() again.
 -- Due to several events at the same time, it may happen that several calls happen at the same time.
@@ -66,7 +86,16 @@ function cosFix:SetLastModelId()
     self.lastModelIdTimerId = nil
     self.db.char.lastModelId = modelId
     
-    -- TODO: Set the shoulder offset again!
+    
+    -- Set the shoulder offset again!
+    local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+    if IsAddOnLoaded("DynamicCam") then
+      userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+    end
+    local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
+    
+    local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
+    CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
     
   end
 end
@@ -187,9 +216,22 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
             if (spellId == 87840) then
               -- print("Running wild")
-              local genderCode = UnitSex("player")
-              returnValue = mountedFactor * self.raceAndGenderToShoulderOffsetFactor["WorgenRunningWild"][genderCode]
+              
+              local modelId = self:GetCurrentModelId()
+              
+              -- If if no lastModelId is stored (e.g. first login), modelId can still be nil.
+              if (modelId == nil) then
+                if (UnitSex("player") == 2) then
+                  returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[307454] * 10
+                else
+                  returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[307453] * 10
+                end
+              else
+                returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[modelId] * 10
+              end
+              
               runningWild = true
+              break
             end
           end
         end
@@ -329,56 +371,31 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
       -- Worgen need special treatment!
       if ((raceFile == "Worgen")) then
 
-        -- Try to determine the current form.
-        local modelFrame = CreateFrame("PlayerModel")
-        modelFrame:SetUnit("player")
-        local modelId = modelFrame:GetModelFileID()
+        local modelId = self:GetCurrentModelId()
+        -- TODO: modelId may still be nil if no lastModelId is stored (e.g. first login).
 
-        -- While dismounting, modelId may return nil.
-        -- When this occurs we use the last known modelId and
-        -- call SetLastModelId(), to be sure to get the
-        -- correct Worgen form eventually.
-        if (modelId == nil) then
-          modelId = self.db.char.lastModelId
-          self:SetLastModelId()
-        else
-          self.db.char.lastModelId = modelId
-        end
+        -- -- For debugging.
+        -- if ((modelId == 1011653) or (modelId == 1000764)) then
+          -- print("... in Human form", modelId)
+        -- else
+          -- print("... in Worgen form", modelId)
+        -- end
 
-        if ((modelId == self.modelId["Human"][2]) or (modelId == self.modelId["Human"][3])) then
-          -- print("... in Human form")
-          returnValue = self.raceAndGenderToShoulderOffsetFactor["Human"][genderCode]
-        else
-          -- print("... in Worgen form")
-          returnValue = self.raceAndGenderToShoulderOffsetFactor["Worgen"][genderCode]
-        end
-
+        returnValue = self.modelIdToShoulderOffsetFactor[modelId]
         
         
       -- All other races are less problematic.
       else
       
-        -- Try to determine the current form.
-        local modelFrame = CreateFrame("PlayerModel")
-        modelFrame:SetUnit("player")
-        local modelId = modelFrame:GetModelFileID()
-        print("modelId", modelId)
-      
-      
-        if (modelId == nil) then
-          modelId = self.db.char.lastModelId
-          self:SetLastModelId()
-        end
-        
-        
+        local modelId = self:GetCurrentModelId()
 
+        -- If if no lastModelId is stored (e.g. first login), modelId can still be nil.
+        if (modelId == nil) then
+          returnValue = 1
         
-        -- TODO: modelId can still be nil if no lastModelId is stored.
-      
-      
         -- When changing back from ghostwolf into shaman you may still get the ghostwolf model id.
         -- Therefore we check if the model id is in the database and only use it then.
-        if (self.modelIdToShoulderOffsetFactor[modelId]) then
+        elseif (self.modelIdToShoulderOffsetFactor[modelId]) then
           print("Using", modelId)
           self.db.char.lastModelId = modelId
           returnValue = self.modelIdToShoulderOffsetFactor[modelId]
@@ -392,16 +409,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           returnValue = 1
         end
       
-      
-      
-        -- if (self.raceAndGenderToShoulderOffsetFactor[raceFile]) then
-          -- returnValue = self.raceAndGenderToShoulderOffsetFactor[raceFile][genderCode]
-        -- else
-          -- cosFix:DebugPrint("Race " .. raceFile .. " not yet known...")
-          -- returnValue = 1
-        -- end
       end
-      
     end
   end
 

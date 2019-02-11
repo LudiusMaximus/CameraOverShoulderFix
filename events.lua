@@ -230,8 +230,11 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
           local factor = 1
           if (self.db.profile.modelIndependentShoulderOffset) then
-            local genderCode = UnitSex("player")
-            factor = self.raceAndGenderToShoulderOffsetFactor["Human"][genderCode]
+            if (UnitSex("player") == 2) then
+              factor = self.modelIdToShoulderOffsetFactor[1011653]
+            else
+              factor = self.modelIdToShoulderOffsetFactor[1000764]
+            end
           end
 
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
@@ -311,8 +314,11 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
         local factor = 1
         if (self.db.profile.modelIndependentShoulderOffset) then
-          local genderCode = UnitSex("player")
-          factor = self.raceAndGenderToShoulderOffsetFactor["Worgen"][genderCode]
+          if (UnitSex("player") == 2) then
+            factor = self.modelIdToShoulderOffsetFactor[307454]
+          else
+            factor = self.modelIdToShoulderOffsetFactor[307453]
+          end
         end
 
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
@@ -327,10 +333,13 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
         local factor = 1
         if (self.db.profile.modelIndependentShoulderOffset) then
-          local genderCode = UnitSex("player")
-          factor = self.raceAndGenderToShoulderOffsetFactor["Human"][genderCode]
+          if (UnitSex("player") == 2) then
+            factor = self.modelIdToShoulderOffsetFactor[1011653]
+          else
+            factor = self.modelIdToShoulderOffsetFactor[1000764]
+          end
         end
-
+        
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
       end
