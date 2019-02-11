@@ -205,8 +205,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
         -- Derive the Worgen form you are changing into from the last known form.
-        local targetWorgenFormAtSpellcast = self:SwitchLastWorgenModelId()
-        if ((targetWorgenFormAtSpellcast == self.modelId["Human"][2]) or (targetWorgenFormAtSpellcast == self.modelId["Human"][3])) then
+        local modelId = self:SwitchLastWorgenModelId()
+        if (modelId == self.raceAndGenderToModelId["Human"][UnitSex("player")]) then
           -- print("Changing into Human.")
 
           -- WoW sometimes misses that you cannot use "Two Forms" while in combat.
@@ -221,7 +221,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- are no events in between. This is why we have to use cosFix_wait here.
 
           -- Set lastModelId to Human.
-          self.db.char.lastModelId = targetWorgenFormAtSpellcast
+          self.db.char.lastModelId = modelId
 
           -- Remember that we are currently chaning into Human in order to suppress
           -- a shoulder offset change by the next UNIT_MODEL_CHANGED.
@@ -230,11 +230,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
           local factor = 1
           if (self.db.profile.modelIndependentShoulderOffset) then
-            if (UnitSex("player") == 2) then
-              factor = self.modelIdToShoulderOffsetFactor[1011653]
-            else
-              factor = self.modelIdToShoulderOffsetFactor[1000764]
-            end
+            factor = self.modelIdToShoulderOffsetFactor[modelId]
           end
 
           local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
@@ -305,7 +301,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- print("Assuming you turn into", modelId)
 
 
-      if ((modelId == self.modelId["Worgen"][2]) or (modelId == self.modelId["Worgen"][3])) then
+      if (modelId == self.raceAndGenderToModelId["Worgen"][UnitSex("player")]) then
         -- print("UNIT_MODEL_CHANGED -> Worgen")
 
         -- Remember that the change into Worgen is complete.
@@ -314,16 +310,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
         local factor = 1
         if (self.db.profile.modelIndependentShoulderOffset) then
-          if (UnitSex("player") == 2) then
-            factor = self.modelIdToShoulderOffsetFactor[307454]
-          else
-            factor = self.modelIdToShoulderOffsetFactor[307453]
-          end
+          factor = self.modelIdToShoulderOffsetFactor[modelId]
         end
 
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
         -- TODO: In fact this is still a little bit too late! But if we want to set it earlier, we would have
-        -- to capture every event that will force change from worgen into human... Is it possible?
+        -- to capture every event that forces a change from worgen into human... Is it possible?
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
       else
@@ -333,13 +325,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
         local factor = 1
         if (self.db.profile.modelIndependentShoulderOffset) then
-          if (UnitSex("player") == 2) then
-            factor = self.modelIdToShoulderOffsetFactor[1011653]
-          else
-            factor = self.modelIdToShoulderOffsetFactor[1000764]
-          end
+          factor = self.modelIdToShoulderOffsetFactor[modelId]
         end
-        
+
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
       end
@@ -406,7 +394,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- print("You are turning into something (" .. formId .. ").")
 
         -- Worgen druids automatically turn into Worgen form when turning into a druid form.
-        self.db.char.lastModelId = self.modelId["Worgen"][UnitSex("player")]
+        if ((raceFile == "Worgen")) then
+          self.db.char.lastModelId = self.raceAndGenderToModelId["Worgen"][UnitSex("player")]
+        end
 
         -- When turning into shapeshift, two UPDATE_SHAPESHIFT_FORM
         -- are executed, the first of which still gets formId == nil (if normal) or the previous formId (if shapeshifted).
@@ -568,9 +558,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       -- When shoulder offset is greater than 0, we need to set it to 10 times its actual value
       -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next UNIT_AURA.
-      
+
       -- TODO: When changed by "Temporal Illusion" (Caverns of time), the UNIT_AURA comes to early!
-      
+
       -- But only if modelIndependentShoulderOffset is enabled.
       if (self.db.profile.modelIndependentShoulderOffset and (correctedShoulderOffset > 0)) then
         correctedShoulderOffset = correctedShoulderOffset * 10

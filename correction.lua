@@ -57,7 +57,7 @@ function cosFix:GetCurrentModelId()
   end
 
   return modelId
-  
+
 end
 
 
@@ -73,7 +73,7 @@ function cosFix:SetLastModelId()
   modelFrame:SetUnit("player")
   local modelId = modelFrame:GetModelFileID()
   -- print(modelId)
-  
+
   if (modelId == nil) then
     if (self.lastModelIdTimerId == nil) or (self.lastModelIdTimerId and self:TimeLeft(self.lastModelIdTimerId) < 0) then
       -- print("Restarting!")
@@ -85,18 +85,18 @@ function cosFix:SetLastModelId()
     -- print("SetLastModelId determined", modelId)
     self.lastModelIdTimerId = nil
     self.db.char.lastModelId = modelId
-    
-    
+
+
     -- Set the shoulder offset again!
     local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
     if IsAddOnLoaded("DynamicCam") then
       userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
     end
     local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
-    
+
     local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
     CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-    
+
   end
 end
 
@@ -105,14 +105,14 @@ end
 -- Switch lastModelId of a Worgen without having to care about gender.
 function cosFix:SwitchLastWorgenModelId()
 
-  if     (self.db.char.lastModelId == self.modelId["Human"][2]) then
-                             return self.modelId["Worgen"][2];   -- Human to Worgen male.
-  elseif (self.db.char.lastModelId == self.modelId["Worgen"][2]) then
-                             return self.modelId["Human"][2];   -- Worgen to Human male.
-  elseif (self.db.char.lastModelId == self.modelId["Human"][3]) then
-                             return self.modelId["Worgen"][3];   -- Human to Worgen female.
-  elseif (self.db.char.lastModelId == self.modelId["Worgen"][3]) then
-                             return self.modelId["Human"][3];   -- Worgen to Human female.
+  if     (self.db.char.lastModelId == self.raceAndGenderToModelId["Human"][2]) then
+                             return self.raceAndGenderToModelId["Worgen"][2];   -- Human to Worgen male.
+  elseif (self.db.char.lastModelId == self.raceAndGenderToModelId["Worgen"][2]) then
+                             return self.raceAndGenderToModelId["Human"][2];   -- Worgen to Human male.
+  elseif (self.db.char.lastModelId == self.raceAndGenderToModelId["Human"][3]) then
+                             return self.raceAndGenderToModelId["Worgen"][3];   -- Human to Worgen female.
+  elseif (self.db.char.lastModelId == self.raceAndGenderToModelId["Worgen"][3]) then
+                             return self.raceAndGenderToModelId["Human"][3];   -- Worgen to Human female.
   else
     -- Should only happen right after logging in.
     return self.db.char.lastModelId
@@ -136,7 +136,7 @@ end
 function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
   -- print("CorrectShoulderOffset", offset)
-  
+
   -- If the "Correct Shoulder Offset" function is deactivated, we do not correct the offset.
   if (not self.db.profile.modelIndependentShoulderOffset) then
     return 1
@@ -147,9 +147,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     return 1
   end
 
-  
+
   local returnValue = 1
-  
+
   -- Is the player entering a vehicle or already in a vehicle?
   if (enteringVehicleGuid or UnitInVehicle("player")) then
     -- print("You are entering or on a vehicle.")
@@ -211,36 +211,32 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         -- Check for Worgen "Running Wild" state.
         local runningWild = false
         local _, raceFile = UnitRace("player")
-        if ((raceFile == "Worgen")) then
+        if (raceFile == "Worgen") then
           for i = 1,40 do
             local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
             if (spellId == 87840) then
               -- print("Running wild")
-              
+
               local modelId = self:GetCurrentModelId()
-              
-              -- If if no lastModelId is stored (e.g. first login), modelId can still be nil.
+
+              -- If no lastModelId is stored (e.g. first login), modelId can still be nil.
               if (modelId == nil) then
-                if (UnitSex("player") == 2) then
-                  returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[307454] * 10
-                else
-                  returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[307453] * 10
-                end
+                returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
               else
                 returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[modelId] * 10
               end
-              
+
               runningWild = true
               break
             end
           end
         end
-        
+
         if (not runningWild) then
-          -- Should only happen when logging mounted with a character after purging of SavedVariables.
+          -- Should only happen when logging in mounted with a character after purging of SavedVariables.
           if (self.db.char.lastActiveMount == nil) then
             returnValue = mountedFactor * 6
-            
+
           -- Use the last active mount.
           else
             -- Is the mount already in the code?
@@ -283,7 +279,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
 
   -- Is the player shapeshifted?
-  -- Shapeshift form 30 is stealth and should be treated like normal.
+  -- Shapeshift form (id 30) is stealth and should be treated like normal.
   elseif ((GetShapeshiftFormID(true) ~= nil) and (GetShapeshiftFormID(true) ~= 30)) then
     -- print("You are shapeshifted.")
 
@@ -313,14 +309,14 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         cosFix:DebugPrint(raceFile .. " druid form factors not yet known...")
         returnValue = 1
       end
-      
+
     elseif (formId == 16) then
       -- print("...Ghostwolf")
       returnValue = self.shamanGhostwolfToShoulderOffsetFactor[formId]
-      
+
     else
       cosFix:DebugPrint("Shapeshift form '" .. formId .. "' not yet known...")
-      
+
     end
 
 
@@ -347,10 +343,10 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Havoc' not yet known...")
             returnValue = 1
           end
-          
+
           metamorphosis = true
           break
-          
+
         elseif (spellId == 187827) then
           -- print("Demon Hunter Metamorphosis Vengeance")
           if (self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]) then
@@ -359,40 +355,48 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Vengeance' not yet known...")
             returnValue = 1
           end
-          
+
           metamorphosis = true
           break
-          
+
         end
       end
     end
-    
+
     if (not metamorphosis) then
       -- Worgen need special treatment!
-      if ((raceFile == "Worgen")) then
+      if (raceFile == "Worgen") then
 
         local modelId = self:GetCurrentModelId()
-        -- TODO: modelId may still be nil if no lastModelId is stored (e.g. first login).
 
-        -- -- For debugging.
-        -- if ((modelId == 1011653) or (modelId == 1000764)) then
-          -- print("... in Human form", modelId)
-        -- else
-          -- print("... in Worgen form", modelId)
-        -- end
+        -- If no lastModelId is stored (e.g. first login), modelId can still be nil.
+        if (modelId == nil) then
 
-        returnValue = self.modelIdToShoulderOffsetFactor[modelId]
-        
-        
+          -- We have no way of knowing the form here, so we guess the more likely Worgen form.
+          returnValue = self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
+
+        else
+          -- -- For debugging.
+          -- if (modelId == self.raceAndGenderToModelId["Worgen"][UnitSex("player")]) then
+            -- print("... in Worgen form", modelId)
+          -- else
+            -- print("... in Human form", modelId)
+          -- end
+
+          returnValue = self.modelIdToShoulderOffsetFactor[modelId]
+        end
+
+
+
       -- All other races are less problematic.
       else
-      
+
         local modelId = self:GetCurrentModelId()
 
-        -- If if no lastModelId is stored (e.g. first login), modelId can still be nil.
+        -- If no lastModelId is stored (e.g. first login), modelId can still be nil.
         if (modelId == nil) then
           returnValue = 1
-        
+
         -- When changing back from ghostwolf into shaman you may still get the ghostwolf model id.
         -- Therefore we check if the model id is in the database and only use it then.
         elseif (self.modelIdToShoulderOffsetFactor[modelId]) then
@@ -404,11 +408,11 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           print("Using last", self.db.char.lastModelId)
           returnValue = self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId]
           self:SetLastModelId()
-        else 
+        else
           cosFix:DebugPrint("Model ID " .. modelId .. " not yet known...")
           returnValue = 1
         end
-      
+
       end
     end
   end
