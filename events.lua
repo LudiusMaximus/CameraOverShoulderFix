@@ -365,18 +365,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       else
         -- print("You are turning into normal Shaman!")
+        -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/8
 
         -- Do not change the shoulder offset here.
         -- Wait until the next UNIT_AURA for perfect timing.
         self.activateNextUnitAura = true
 
-        -- TODO: Very rarely there are *two* UPDATE_SHAPESHIFT_FORM events while turning back into normal.
-        -- If this happens, the second event is probably the one that should start a timer to update
-        -- the shoulder offset, because then the next UNIT_AURA is too early. To fix this for good we
-        -- would need a possibility to start timers like cosFix_wait and stop currently queued timers
-        -- that have not been executed yet (cosFix_waitTable = {};).
-        -- Then UPDATE_SHAPESHIFT_FORM could always stop the currently queued
-        -- timers and start a new one.
         return
       end
 
@@ -446,13 +440,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       else
         -- print("You are turning into normal Druid!")
 
-        if ((self.db.char.lastformId == 3) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
-
-          -- When turning from travel form into normal druid, there is always a first
-          -- UPDATE_SHAPESHIFT_FORM where still the shapeshifted form is detected.
-          -- This will start a timer, which we have to revoke here.
+        -- When turning from aquatic/travel form or Tree of Life into normal druid,
+        -- there is always a first UPDATE_SHAPESHIFT_FORM where in which
+        -- still the shapeshifted form is detected.
+        -- This will start a timer, which we have to revoke here.
+        if ((self.db.char.lastformId == 2) or (self.db.char.lastformId == 3) or (self.db.char.lastformId == 4) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
           cosFix_waitTable = {}
-
           self.db.char.lastformId = nil
         end
 
@@ -559,7 +552,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- When shoulder offset is greater than 0, we need to set it to 10 times its actual value
       -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next UNIT_AURA.
 
-      -- TODO: When changed by "Temporal Illusion" (Caverns of time), the UNIT_AURA comes to early!
+      -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/9
 
       -- But only if modelIndependentShoulderOffset is enabled.
       if (self.db.profile.modelIndependentShoulderOffset and (correctedShoulderOffset > 0)) then
@@ -601,7 +594,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
     -- We are also using UNIT_AURA to get the right timing for Demon Hunter Metamorphosis.
     -- Demon hunter always has to check for Metamorphosis.
-    -- TODO: Mounting and dismounting while in Metamorphosis would have to be taken care of specifically.
+    -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/10
     local _, englishClass = UnitClass("player")
     if (englishClass == "DEMONHUNTER") then
 

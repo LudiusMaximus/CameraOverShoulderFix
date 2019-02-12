@@ -8,6 +8,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 cosFix.modelIdToShoulderOffsetFactor = {
 
+  -- Alliance core races
   [1011653] = 1.25,   -- Human male
   [1000764] = 1.45,   -- Human female
   [878772]  = 1.13,   -- Dwarf male
@@ -21,6 +22,7 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [307454]  = 0.94,   -- Worgen male
   [307453]  = 1.18,   -- Worgen female
 
+  -- Alliance allied races
   [1734034] = 1.32,   -- VoidElf male
   [1733758] = 1.40,   -- VoidElf female
   [1620605] = 0.98,   -- LightforgedDraenei male
@@ -30,14 +32,14 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [1721003] = 1.00,   -- KulTiran male
   [1886724] = 1.21,   -- KulTiran female
 
-
-  [1968587] = 1.00,   -- Orc male (upright)
-  [917116]  = 0.97,   -- Orc male (hunched)
-  [949470]  = 1.25,   -- Orc female
+  -- Horde core races
+  [1968587] = 1.00,   -- (Maghar)Orc male (upright)
+  [917116]  = 0.97,   -- (Maghar)Orc male (hunched)
+  [949470]  = 1.25,   -- (Maghar)Orc female
   [959310]  = 1.20,   -- Scourge male
   [997378]  = 1.40,   -- Scourge female
   [968705]  = 1.00,   -- Tauren male
-  [986648]  = 1.15,   -- Tauren female
+  [986648]  = 1.20,   -- Tauren female
   [1022938] = 0.98,   -- Troll male
   [1018060] = 1.25,   -- Troll female
   [1100087] = 1.32,   -- BloodElf male
@@ -45,10 +47,18 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [119376]  = 1.32,   -- Goblin male
   [119369]  = 1.32,   -- Goblin female
 
+  -- Horde allied races
   [1814471]  = 1.20,  -- Nightborne male
   [1810676]  = 1.27,  -- Nightborne female
+  [1630218]  = 1.00,  -- HighmountainTauren male
+  [1630402]  = 1.18,  -- HighmountainTauren female
+                      -- MagharOrc male (same as Orc)
+                      -- MagharOrc female (same as Orc)
+  [1630447]  = 1.05,  -- ZandalariTroll male
+  [1662187]  = 1.09,  -- ZandalariTroll female
 
 
+  -- Pandaren
   [535052]  = 0.95,   -- Pandaren male
   [589715]  = 1.07,   -- Pandaren female
 
