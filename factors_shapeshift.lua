@@ -28,9 +28,9 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
   ["Worgen"] = {
     -- Actually the same for male and female...
     [2] = {   -- male
-      [1]   = 0.685,   -- Cat
+      [1]   = 0.689,   -- Cat
       [2]   = 0.63,    -- Tree of Life
-      [3]   = 0.66,    -- Travel
+      [3]   = 0.663,    -- Travel
       [4]   = 0.515,   -- Aquatic
       [5]   = 0.68,    -- Bear
       [27]  = 0.38,    -- Swift Flight

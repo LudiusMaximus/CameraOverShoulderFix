@@ -142,7 +142,8 @@ cosFix.skipNextWorgenUnitModelChanged = 0
 
 function cosFix:ShoulderOffsetEventHandler(event, ...)
 
-  print("ShoulderOffsetEventHandler got event:", event, ...)
+  -- print("##########################")
+  -- print("ShoulderOffsetEventHandler got event:", event, ...)
 
   -- If both shoulder offset adjustments are disabled, do nothing!
   if (not self.db.profile.modelIndependentShoulderOffset and not self.db.profile.shoulderOffsetZoom) then
@@ -240,6 +241,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- print("Changing into Worgen.")
 
           -- The shoulder offset change will be performed by UNIT_MODEL_CHANGED.
+          self.skipNextWorgenUnitModelChanged = 0
 
           -- Remember only that you are currently changing into Worgen
           -- in case "Two Forms" is called again before change is complete.
@@ -271,9 +273,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       -- When changing Worgen form, there are always two UNIT_MODEL_CHANGED calls.
       -- The first has (almost) the right timing to change the camera shoulder offset while
-      -- turing into Worgen. For turning into Human, we need our own cosFix_wait timer
+      -- turing into Worgen. For changing into Human, we need our own cosFix_wait timer
       -- started by UNIT_SPELLCAST_SUCCEEDED of "Two Forms".
-      -- Thus, when turning into Human, we completely suppress the first
+      -- Thus, when changing into Human, we completely suppress the first
       -- call of UNIT_MODEL_CHANGED. (When using "Two Forms" while chaning into Worgen
       -- we even have to skip the next two calls of UNIT_MODEL_CHANGED.)
       if (self.skipNextWorgenUnitModelChanged > 0) then
@@ -293,12 +295,15 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       if (modelId == nil) then
         -- print("Using the opposite of lastModelId.")
         modelId = self:SwitchLastWorgenModelId()
-
+        -- This will eventually set the right model ID.
+        self:SetLastModelId()
+      elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
+        -- print("Using the opposite of lastModelId.")
+        modelId = self:SwitchLastWorgenModelId()
         -- This will eventually set the right model ID.
         self:SetLastModelId()
       end
-
-      -- print("Assuming you turn into", modelId)
+      -- print("Assuming you change into", modelId)
 
 
       if (modelId == self.raceAndGenderToModelId["Worgen"][UnitSex("player")]) then
@@ -355,16 +360,16 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     if (englishClass == "SHAMAN") then
 
       if (GetShapeshiftFormID(true) ~= nil) then
-        -- print("You are turning into Ghostwolf (" .. GetShapeshiftFormID(true) .. ").")
+        -- print("You are changing into Ghostwolf (" .. GetShapeshiftFormID(true) .. ").")
 
-        -- -- The UPDATE_SHAPESHIFT_FORM while turning into Ghostwolf comes too early.
+        -- -- The UPDATE_SHAPESHIFT_FORM while changing into Ghostwolf comes too early.
         -- -- And also the subsequent UNIT_MODEL_CHANGED is still too early.
         -- -- That is why we have to use the cosFix_wait timer instead.
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
         return cosFix_wait(0.01, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
 
       else
-        -- print("You are turning into normal Shaman!")
+        -- print("You are changing into normal Shaman!")
         -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/8
 
         -- Do not change the shoulder offset here.
@@ -385,14 +390,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       local formId = GetShapeshiftFormID(true)
       if (formId ~= nil) then
-        -- print("You are turning into something (" .. formId .. ").")
+        -- print("You are changing into a shapeshift form.", formId)
 
-        -- Worgen druids automatically turn into Worgen form when turning into a druid form.
+        -- Worgen druids automatically change into Worgen form, when changing into a druid shapeshift form.
         if (raceFile == "Worgen") then
           self.db.char.lastModelId = self.raceAndGenderToModelId["Worgen"][UnitSex("player")]
         end
 
-        -- When turning into shapeshift, two UPDATE_SHAPESHIFT_FORM
+        -- When changing into shapeshift, two UPDATE_SHAPESHIFT_FORM
         -- are executed, the first of which still gets formId == nil (if normal) or the previous formId (if shapeshifted).
         -- For the former we set updateShapeshiftFormCounter back to 0.
         -- For the latter we have to stop the timer.
@@ -400,7 +405,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         cosFix_waitTable = {}
 
         -- Remember the current formId, because we have to use different timings
-        -- when turning back into normal depending on the current shapeshift form.
+        -- when changing back into normal depending on the current shapeshift form.
         self.db.char.lastformId = formId
 
         -- This is needed to register when we are changing from one druid form
@@ -438,9 +443,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         end
 
       else
-        -- print("You are turning into normal Druid!")
+        -- print("You are changing into normal Druid!")
 
-        -- When turning from aquatic/travel form or Tree of Life into normal druid,
+        -- When changing from aquatic/travel form or Tree of Life into normal druid,
         -- there is always a first UPDATE_SHAPESHIFT_FORM where in which
         -- still the shapeshifted form is detected.
         -- This will start a timer, which we have to revoke here.
@@ -450,7 +455,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         end
 
 
-        -- When turning from a non-travel form back into normal, we have to use the next
+        -- When changing from a non-travel form back into normal, we have to use the next
         -- UPDATE_SHAPESHIFT_FORM events, because for some reason the shoulder offset change
         -- occurs sometimes sooner, sometimes later after the first UPDATE_SHAPESHIFT_FORM.
         if (self.db.char.lastformId ~= nil) then
@@ -598,7 +603,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     local _, englishClass = UnitClass("player")
     if (englishClass == "DEMONHUNTER") then
 
-      -- Turning into Metamorphosis.
+      -- Changing into Metamorphosis form.
       for i = 1,40 do
         local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
         -- print(name, spellId)
@@ -613,7 +618,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         end
       end
 
-      -- Turning into normal Demon Hunter.
+      -- Changing into normal Demon Hunter form.
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
       -- print("UNIT_AURA for DEMON HUNTER back to normal")
       return cosFix_wait(0.082, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
