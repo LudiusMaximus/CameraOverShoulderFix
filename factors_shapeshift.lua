@@ -25,12 +25,14 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [31]  = 0.853,   -- Moonkin
     },
   },
+  
+  
+  
   ["Worgen"] = {
-    -- Actually the same for male and female...
     [2] = {   -- male
       [1]   = 0.689,   -- Cat
       [2]   = 0.63,    -- Tree of Life
-      [3]   = 0.663,    -- Travel
+      [3]   = 0.663,   -- Travel
       [4]   = 0.515,   -- Aquatic
       [5]   = 0.68,    -- Bear
       [27]  = 0.38,    -- Swift Flight
@@ -42,12 +44,36 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [2]   = 0.63,    -- Tree of Life
       [3]   = 0.66,    -- Travel
       [4]   = 0.515,   -- Aquatic
-      [5]   = 0.68,    -- Bear
+      [5]   = 0.678,   -- Bear
       [27]  = 0.38,    -- Swift Flight
       [29]  = 0.38,    -- Flight     -- TODO
       [31]  = 0.72,    -- Moonkin
     },
-  }
+  },
+    
+  ["KulTiran"] = {
+    [2] = {   -- male
+      [1]   = 0.689,   -- Cat
+      [2]   = 0.844,   -- Tree of Life
+      [3]   = 0.64,    -- Travel
+      [4]   = 0.455,   -- Aquatic
+      [5]   = 0.663,   -- Bear
+      [27]  = 1.055,   -- Swift Flight
+      [29]  = 1.055,   -- Flight     -- TODO
+      [31]  = 0.80,    -- Moonkin
+    },
+    [3] = {   -- female
+      [1]   = 0.689,   -- Cat
+      [2]   = 0.849,   -- Tree of Life
+      [3]   = 0.642,   -- Travel
+      [4]   = 0.457,   -- Aquatic
+      [5]   = 0.663,   -- Bear
+      [27]  = 1.055,   -- Swift Flight
+      [29]  = 1.055,   -- Flight     -- TODO
+      [31]  = 0.80,    -- Moonkin
+    },   
+    
+  },
 };
 
 
@@ -75,6 +101,7 @@ cosFix.demonhunterFormToShoulderOffsetFactor = {
 }
 
 
+-- TODO: https://www.wowhead.com/item=137287/glyph-of-the-spectral-raptor#created-by-spell
 cosFix.shamanGhostwolfToShoulderOffsetFactor = {
   [16]  = 0.758,  -- Ghostwolf
 };
