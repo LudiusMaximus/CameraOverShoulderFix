@@ -2,10 +2,6 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 -- Map mountId to sholder offset factor.
--- TODO: Here we have to fill in offset factors for each and every mount model in the game...
--- We could maybe make this a "croudsourcing" endeavour. People will see the console message below,
--- if their current mount is not yet in the code, and I could make a youtube video tutorial
--- explaining how to determine the correct factor, which they would then send to us.
 cosFix.mountIdToShoulderOffsetFactor = {
 
   [6]   = 7.5,   -- Brown Horse
@@ -29,3 +25,4 @@ cosFix.mountIdToShoulderOffsetFactor = {
   [780] = 5.4,   -- Felsaber
 
 };
+

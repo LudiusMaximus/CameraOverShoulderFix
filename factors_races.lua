@@ -1,11 +1,7 @@
 local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
-
-
-
-
-
+-- Map modelId of player models to sholder offset factor.
 cosFix.modelIdToShoulderOffsetFactor = {
 
   -- Alliance core races
@@ -57,7 +53,6 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [1630447]  = 1.05,  -- ZandalariTroll male
   [1662187]  = 1.09,  -- ZandalariTroll female
 
-
   -- Pandaren
   [535052]  = 0.95,   -- Pandaren male
   [589715]  = 1.07,   -- Pandaren female
@@ -68,7 +63,7 @@ cosFix.modelIdToShoulderOffsetFactor = {
 
 -- We only use this for Worgen form changes (so far)...
 cosFix.raceAndGenderToModelId = {
-  -- race                         male         female
+  -- race                      male           female
   ["Human"]              = {  [2] = 1011653,  [3] = 1000764 },
   ["Worgen"]             = {  [2] = 307454,   [3] = 307453  },
 };

@@ -5,57 +5,58 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 -- Use this code to copy stuff from the eventtrace window into clipboard.
 -- Thanks a lot to Fizzlemizz:
 -- https://www.wowinterface.com/forums/showthread.php?t=56917
-local TFrame
-SLASH_MYTRACE1 = "/tt"
-SlashCmdList["MYTRACE"] = function(msg)
-  if not EventTraceFrame then print("ETRACE NOT OPEN") return end
-  if not TFrame then
-    TFrame = CreateFrame("Button", "FizzleEventList", UIParent)
-    TFrame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile="Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, insets = {left = 8, right = 8, top = 8, bottom = 8},})
-    TFrame:SetBackdropColor(0, 0, 0)
-    TFrame:SetPoint("RIGHT", -12)
-    TFrame:SetSize(400, 400)
-    TFrame.SF = CreateFrame("ScrollFrame", "$parent_DF", TFrame, "UIPanelScrollFrameTemplate")
-    TFrame.SF:SetPoint("TOPLEFT", TFrame, 12, -30)
-    TFrame.SF:SetPoint("BOTTOMRIGHT", TFrame, -30, 10)
-    TFrame.Text = CreateFrame("EditBox", nil, TFrame)
-    TFrame.Text:SetMultiLine(true)
-    TFrame.Text:SetSize(180, 170)
-    TFrame.Text:SetPoint("TOPLEFT", TFrame.SF)
-    TFrame.Text:SetPoint("BOTTOMRIGHT", TFrame.SF)
-    TFrame.Text:SetMaxLetters(99999)
-    TFrame.Text:SetFontObject(GameFontNormal)
-    TFrame.Text:SetAutoFocus(false)
-    TFrame.Text:SetScript("OnEscapePressed", function(self)self:ClearFocus() end)
-    TFrame.SF:SetScrollChild(TFrame.Text)
-    TFrame.Close = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
-    TFrame.Close:SetSize(24, 24)
-    TFrame.Close:SetPoint("TOPRIGHT", -8, -8)
-    TFrame.Close:SetText("X")
-    TFrame.Close:SetScript("OnClick", function(self) self:GetParent():Hide() end)
-    TFrame.Clear = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
-    TFrame.Clear:SetSize(24, 24)
-    TFrame.Clear:SetPoint("RIGHT", TFrame.Close, "LEFT", -1)
-    TFrame.Clear:SetText("R")
-    TFrame.Clear:SetScript("OnClick", function(self)
-      local t = self:GetParent().Text
-      local text = ""
-      for i=1, #EventTraceFrame.events do
-          text = text.."\n"..EventTraceFrame.events[i]
-      end
-      t:SetText("")
-      t:SetText(text)
-      t:ClearFocus()
-    end)
-    TFrame:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp")
-    TFrame:RegisterForDrag("LeftButton")
-    TFrame:SetMovable(true)
-    TFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    TFrame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() ValidateFramePosition(self) end)
-  else
-    TFrame:SetShown(not TFrame:IsShown())
-  end
-end
+
+-- local TFrame
+-- SLASH_MYTRACE1 = "/tt"
+-- SlashCmdList["MYTRACE"] = function(msg)
+  -- if not EventTraceFrame then print("ETRACE NOT OPEN") return end
+  -- if not TFrame then
+    -- TFrame = CreateFrame("Button", "FizzleEventList", UIParent)
+    -- TFrame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile="Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, insets = {left = 8, right = 8, top = 8, bottom = 8},})
+    -- TFrame:SetBackdropColor(0, 0, 0)
+    -- TFrame:SetPoint("RIGHT", -12)
+    -- TFrame:SetSize(400, 400)
+    -- TFrame.SF = CreateFrame("ScrollFrame", "$parent_DF", TFrame, "UIPanelScrollFrameTemplate")
+    -- TFrame.SF:SetPoint("TOPLEFT", TFrame, 12, -30)
+    -- TFrame.SF:SetPoint("BOTTOMRIGHT", TFrame, -30, 10)
+    -- TFrame.Text = CreateFrame("EditBox", nil, TFrame)
+    -- TFrame.Text:SetMultiLine(true)
+    -- TFrame.Text:SetSize(180, 170)
+    -- TFrame.Text:SetPoint("TOPLEFT", TFrame.SF)
+    -- TFrame.Text:SetPoint("BOTTOMRIGHT", TFrame.SF)
+    -- TFrame.Text:SetMaxLetters(99999)
+    -- TFrame.Text:SetFontObject(GameFontNormal)
+    -- TFrame.Text:SetAutoFocus(false)
+    -- TFrame.Text:SetScript("OnEscapePressed", function(self)self:ClearFocus() end)
+    -- TFrame.SF:SetScrollChild(TFrame.Text)
+    -- TFrame.Close = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
+    -- TFrame.Close:SetSize(24, 24)
+    -- TFrame.Close:SetPoint("TOPRIGHT", -8, -8)
+    -- TFrame.Close:SetText("X")
+    -- TFrame.Close:SetScript("OnClick", function(self) self:GetParent():Hide() end)
+    -- TFrame.Clear = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
+    -- TFrame.Clear:SetSize(24, 24)
+    -- TFrame.Clear:SetPoint("RIGHT", TFrame.Close, "LEFT", -1)
+    -- TFrame.Clear:SetText("R")
+    -- TFrame.Clear:SetScript("OnClick", function(self)
+      -- local t = self:GetParent().Text
+      -- local text = ""
+      -- for i=1, #EventTraceFrame.events do
+          -- text = text.."\n"..EventTraceFrame.events[i]
+      -- end
+      -- t:SetText("")
+      -- t:SetText(text)
+      -- t:ClearFocus()
+    -- end)
+    -- TFrame:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp")
+    -- TFrame:RegisterForDrag("LeftButton")
+    -- TFrame:SetMovable(true)
+    -- TFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    -- TFrame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() ValidateFramePosition(self) end)
+  -- else
+    -- TFrame:SetShown(not TFrame:IsShown())
+  -- end
+-- end
 
 
 
