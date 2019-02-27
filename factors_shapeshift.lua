@@ -27,6 +27,28 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
   },
   
   
+  ["NightElf"] = {
+    [2] = {   -- male
+      [1]   = 0.739,   -- Cat
+      [2]   = 0.634,   -- Tree of Life
+      [3]   = 0.66,    -- Travel
+      [4]   = 0.512,   -- Aquatic
+      [5]   = 0.688,   -- Bear
+      [27]  = 0.383,   -- Swift Flight
+      [29]  = 0.383,   -- Flight     -- TODO
+      [31]  = 0.773,   -- Moonkin
+    },
+    [3] = {   -- female
+      [1]   = 0.75,    -- Cat
+      [2]   = 0.641,   -- Tree of Life
+      [3]   = 0.67,    -- Travel
+      [4]   = 0.519,   -- Aquatic
+      [5]   = 0.698,   -- Bear
+      [27]  = 0.388,   -- Swift Flight
+      [29]  = 0.388,   -- Flight     -- TODO
+      [31]  = 0.785,   -- Moonkin
+    },
+  },
   
   ["Worgen"] = {
     [2] = {   -- male

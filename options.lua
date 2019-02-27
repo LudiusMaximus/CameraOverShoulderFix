@@ -2,7 +2,6 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
-
 local defaults = {
   profile = {
     modelIndependentShoulderOffset = true,
@@ -18,7 +17,6 @@ local defaults = {
     }
   }
 }
-
 
 
 local optionsTable = {
@@ -180,7 +178,7 @@ local optionsTable = {
           type = 'execute',
           name = "Restore defaults",
           disabled = function() return not cosFix.db.profile.enabled end,
-          desc = "Restore the settings to the preference of the " .. folderName .. " developer.",
+          desc = "Restore settings to the preference of the " .. folderName .. " developer.",
           width = "full",
           func = function()
                   for variable, value in pairs(defaults.profile.cvars) do
@@ -198,7 +196,6 @@ local optionsTable = {
 function cosFix:InitializeDatabase()
   self.db = LibStub("AceDB-3.0"):New("cosFixDB", defaults, true)
 end
-
 
 
 function cosFix:OpenOptionsMenu()
