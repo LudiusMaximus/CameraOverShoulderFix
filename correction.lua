@@ -417,9 +417,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           -- local _, raceFile = UnitRace("player")
           -- returnValue = self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId[raceFile][UnitSex("player")]]
 
-        -- This may happen for new race models or for if lastModelId was still a shapeshift form.
+        -- This may happen for new race models or if lastModelId was still a shapeshift form.
         elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
-          -- cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
+          cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
 
           returnValue = 1
           -- TODO: Same as above.
