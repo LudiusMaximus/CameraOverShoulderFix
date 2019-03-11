@@ -57,6 +57,10 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [535052]  = 0.95,   -- Pandaren male
   [589715]  = 1.07,   -- Pandaren female
 
+
+
+  [124118]  = 0.89,   -- Furbolg Form (Stave of Fur and Claw)
+
 }
 
 
