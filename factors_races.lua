@@ -58,7 +58,11 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [589715]  = 1.07,   -- Pandaren female
 
 
-
+  -- Can happen while changing back from Tree of Life.
+  -- TODO: Should be avoided by catching the event!
+  [464148]  = 1.00,
+  
+  
   [124118]  = 0.89,   -- Furbolg Form (Stave of Fur and Claw)
 
 }

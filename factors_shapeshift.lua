@@ -3,6 +3,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 cosFix.druidFormIdToShoulderOffsetFactor = {
+
   ["Tauren"] = {
     [2] = {   -- male
       [1]   = 0.862,   -- Cat
@@ -25,7 +26,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [31]  = 0.853,   -- Moonkin
     },
   },
-  
+
   ["Troll"] = {
     [2] = {   -- male
       [1]   = 0.685,   -- Cat
@@ -48,13 +49,55 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [31]  = 0.771,   -- Moonkin
     },
   },
-  
-  
-  
-  
-  
-  
-  
+
+  ["HighmountainTauren"] = {
+    [2] = {   -- male
+      [1]   = 0.858,   -- Cat
+      [2]   = 0.776,   -- Tree of Life
+      [3]   = 0.881,   -- Travel
+      [4]   = 0.71,    -- Aquatic
+      [5]   = 0.827,   -- Bear
+      [27]  = 0.587,   -- Swift Flight
+      [29]  = 0.587,   -- Flight     -- TODO
+      [31]  = 1.00,    -- Moonkin
+    },
+    [3] = {   -- female
+      [1]   = 0.778,   -- Cat
+      [2]   = 0.706,   -- Tree of Life
+      [3]   = 0.804,   -- Travel
+      [4]   = 0.644,   -- Aquatic
+      [5]   = 0.75,    -- Bear
+      [27]  = 0.532,   -- Swift Flight
+      [29]  = 0.532,   -- Flight     -- TODO
+      [31]  = 0.905,   -- Moonkin
+    },
+  },
+
+  ["ZandalariTroll"] = {
+    [2] = {   -- male
+      [1]   = 0.596,   -- Cat
+      [2]   = 0.844,   -- Tree of Life
+      [3]   = 0.431,   -- Travel
+      [4]   = 0.319,   -- Aquatic
+      [5]   = 0.605,   -- Bear
+      [27]  = 0.507,   -- Swift Flight
+      [29]  = 0.507,   -- Flight     -- TODO
+      [31]  = 0.701,   -- Moonkin
+    },
+    [3] = {   -- female
+      [1]   = 0.601,   -- Cat
+      [2]   = 0.855,   -- Tree of Life
+      [3]   = 0.433,   -- Travel
+      [4]   = 0.321,   -- Aquatic
+      [5]   = 0.61,    -- Bear
+      [27]  = 0.513,   -- Swift Flight
+      [29]  = 0.513,   -- Flight     -- TODO
+      [31]  = 0.71,    -- Moonkin
+    },
+  },
+
+
+
   ["NightElf"] = {
     [2] = {   -- male
       [1]   = 0.739,   -- Cat
@@ -77,7 +120,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [31]  = 0.785,   -- Moonkin
     },
   },
-  
+
   ["Worgen"] = {
     [2] = {   -- male
       [1]   = 0.689,   -- Cat
@@ -100,7 +143,7 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [31]  = 0.72,    -- Moonkin
     },
   },
-    
+
   ["KulTiran"] = {
     [2] = {   -- male
       [1]   = 0.689,   -- Cat
@@ -121,9 +164,9 @@ cosFix.druidFormIdToShoulderOffsetFactor = {
       [27]  = 1.055,   -- Swift Flight
       [29]  = 1.055,   -- Flight     -- TODO
       [31]  = 0.80,    -- Moonkin
-    },   
-    
+    },
   },
+
 };
 
 
