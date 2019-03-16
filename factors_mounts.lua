@@ -6,6 +6,7 @@ cosFix.mountIdToShoulderOffsetFactor = {
 
   [6]   = 7.5,   -- Brown Horse
   [17]  = 7.6,   -- Felsteed
+  [19]  = 6.0,   -- Dire Wolf
   [71]  = 4.7,   -- Gray Kodo
   [72]  = 4.7,   -- Brown Kodo
   [76]  = 4.3,   -- Black War Kodo

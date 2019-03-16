@@ -59,7 +59,7 @@ cosFix.modelIdToShoulderOffsetFactor = {
 
   
   [124118]  = 0.89,   -- Furbolg Form (Stave of Fur and Claw)
-  
+  [118653]  = 1.03,   -- Dragonmaw Fel Orc male (Dragonmaw Illusion in BC Shadowmoon Valley)
   
   
   

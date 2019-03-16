@@ -208,6 +208,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     if (not UnitOnTaxi("player")) then
 
       local mountId = self:GetCurrentMount()
+      -- print(mountId)
 
       -- Right after logging in while on a mount it happens that "IsMounted()" returns true,
       -- but C_MountJournal.GetMountInfoByID() is not yet able to determine that the mount is active.
@@ -215,38 +216,44 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
       if (mountId == nil) then
         -- print("Mounted but no mount")
 
-        -- Check for Worgen "Running Wild" state.
-        local runningWild = false
-        local _, raceFile = UnitRace("player")
-        if (raceFile == "Worgen") then
-          for i = 1,40 do
-            local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-            if (spellId == 87840) then
-              -- print("Running wild")
+        -- Check for special buffs.
+        local specialBuffActive = false
 
-              local modelId = self:GetCurrentModelId()
+        for i = 1,40 do
+          local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
+          -- print (name, spellId)
 
-              -- If no lastModelId is stored (e.g. first login), modelId can still be nil.
-              if (modelId == nil) then
-                returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
-              -- We want no invalid model ids.
-              elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
-                returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
-              else
-                returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[modelId] * 10
-              end
+          if (spellId == 87840) then
+            -- print("Running wild")
 
-              runningWild = true
-              break
+            local modelId = self:GetCurrentModelId()
+
+            -- If no lastModelId is stored (e.g. first login), modelId can still be nil.
+            if (modelId == nil) then
+              returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
+            -- We want no invalid model ids.
+            elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
+              returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
+            else
+              returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[modelId] * 10
             end
+
+            specialBuffActive = true
+            break
+
+          elseif (spellId == 40212) then
+            -- print("Dragonmaw Nether Drake")
+            returnValue = mountedFactor * 2.5
+            specialBuffActive = true
+            break
           end
         end
 
-        if (not runningWild) then
+
+        if (not specialBuffActive) then
           -- Should only happen when logging in mounted with a character after purging of SavedVariables.
           if (self.db.char.lastActiveMount == nil) then
             returnValue = mountedFactor * 6
-
           -- Use the last active mount.
           else
             -- Is the mount already in the code?
