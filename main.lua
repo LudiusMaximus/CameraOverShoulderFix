@@ -8,11 +8,18 @@ CosFix_OriginalSetCVar = SetCVar
 
 function CosFixSetCVar(...)
   local variable, value = ...
-  
+
   if (variable == "test_cameraOverShoulder") then
-    value = value * cosFix:CorrectShoulderOffset(value) * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom())
+
+    local modelFactor = cosFix:CorrectShoulderOffset(value)
+    -- setCVar should always work. For unknown model IDs we use the default 1.
+    if (modelFactor == -1) then
+      modelFactor = 1
+    end
+
+    value = value * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * modelFactor
   end
-  
+
   CosFix_OriginalSetCVar(variable, value)
 end
 
@@ -27,10 +34,10 @@ CosFix_OriginalCameraZoomOut = CameraZoomOut
 -- These might already have been changed to reactive zoom by DynamicCam.
 if IsAddOnLoaded("DynamicCam") then
   DynamicCam:ReactiveZoomOff()
-  
+
   CosFix_OriginalCameraZoomIn = CameraZoomIn
   CosFix_OriginalCameraZoomOut = CameraZoomOut
-  
+
   if (DynamicCam.db.profile.reactiveZoom.enabled) then
     DynamicCam:ReactiveZoomOn()
   end
@@ -54,12 +61,20 @@ function CosFix_CameraZoomIn(...)
   end
   targetZoom = targetZoom or currentZoom
   targetZoom = math.max(0, targetZoom - increments)
-  
+
   local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
   if IsAddOnLoaded("DynamicCam") then
     userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
   end
-  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * cosFix:CorrectShoulderOffset(userSetShoulderOffset)
+
+  local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
+
+  -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
+  if (modelFactor == -1) then
+    modelFactor = 1
+  end
+
+  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
   return CosFix_OriginalCameraZoomIn(...)
@@ -82,7 +97,15 @@ function CosFix_CameraZoomOut(...)
   if IsAddOnLoaded("DynamicCam") then
     userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
   end
-  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * cosFix:CorrectShoulderOffset(userSetShoulderOffset)
+
+  local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
+
+  -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
+  if (modelFactor == -1) then
+    modelFactor = 1
+  end
+
+  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
   return CosFix_OriginalCameraZoomOut(...)
@@ -116,10 +139,10 @@ end
 
 
 function cosFix:OnInitialize()
-  
+
   -- Hide the Blizzard warning.
   UIParent:UnregisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
-  
+
   self:InitializeDatabase()
   self:InitializeOptions()
 
@@ -130,25 +153,25 @@ function cosFix:OnEnable()
 
   -- Hide the Blizzard warning.
   UIParent:UnregisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
-  
+
   -- Hooking functions.
   SetCVar = CosFixSetCVar
-  
+
   if (IsAddOnLoaded("DynamicCam") and (DynamicCam.db.profile.reactiveZoom.enabled)) then
     DynamicCam:ReactiveZoomOn()
   else
     self:NonReactiveZoomOn()
   end
-  
+
 
   self:RegisterEvents()
-    
+
   -- Must wait before setting variables in the beginning.
   -- Otherwise, the value for test_cameraOverShoulder might not be applied.
   if not IsAddOnLoaded("DynamicCam") then
     self:ScheduleTimer("SetVariables", 0.1)
   end
-  
+
 end
 
 
@@ -158,13 +181,13 @@ function cosFix:OnDisable()
   SetCVar       = CosFix_OriginalSetCVar
   CameraZoomIn  = CosFix_OriginalCameraZoomIn
   CameraZoomOut = CosFix_OriginalCameraZoomOut
-  
+
   self:UnregisterAllEvents()
-  
+
   -- Restore all test variables and enable the Blizzard warning.
   ResetTestCvars();
   UIParent:RegisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED");
-  
+
 end
 
 

@@ -94,8 +94,11 @@ function cosFix:SetLastModelId()
     end
     local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
 
-    local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-    CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+    local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
+    if (modelFactor ~= -1) then
+      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
+      CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+    end
 
   end
 end
@@ -417,8 +420,8 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         -- If no lastModelId is stored (e.g. first login), modelId can still be nil.
         if (modelId == nil) then
 
-          returnValue = 1
-          -- TODO: You may instead do this to be even better than just taking the standard of 1.
+          returnValue = -1
+          -- TODO: You may instead do the following to be even better...
           --       But it would require a complete raceAndGenderToModelId array
           ---      and it is probably never really noticeable.
           -- local _, raceFile = UnitRace("player")
@@ -428,8 +431,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
           cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
 
-          returnValue = 1
-          -- TODO: Same as above.
+          -- Do not change anything!
+          returnValue = -1
+
 
         -- When changing back from ghostwolf into shaman you may still get the ghostwolf model id.
         -- Therefore we check if the model id is in the database and only use it then.

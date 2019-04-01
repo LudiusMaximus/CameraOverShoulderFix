@@ -12,7 +12,7 @@ local defaults = {
       test_cameraOverShoulder = 1.5,
       test_cameraDynamicPitch = 1,
       test_cameraDynamicPitchBaseFovPad = 0.75,
-      test_cameraDynamicPitchBaseFovPadFlying = 1,
+      test_cameraDynamicPitchBaseFovPadFlying = 0.75,
       test_cameraDynamicPitchBaseFovPadDownScale = 1,
     }
   }
