@@ -431,6 +431,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
           cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
 
+          -- TODO: If lastModelId was a shapeshift form, it would be good to use the last known
+          -- "normal" model id. Would have to be stored separately!
+
           -- Do not change anything!
           returnValue = -1
 

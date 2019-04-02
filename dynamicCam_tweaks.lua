@@ -1313,6 +1313,7 @@ if IsAddOnLoaded("DynamicCam") then
   DynamicCam.ReactiveZoomOff = ReactiveZoomOff
 
 
+  -- Access function.
   function cosFix:AccessStopEasingShoulderOffset()
     stopEasingShoulderOffset()
   end

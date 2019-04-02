@@ -63,7 +63,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 -- This is needed to get the timing of changing the shoulder offset as good as possible
--- for some model changes. The Ace3 ScheduleTimer is too slow for some extreme cases.
+-- for some model change events. The Ace3 ScheduleTimer is too slow for some extreme cases.
 -- http://wowwiki.wikia.com/wiki/Wait
 
 local cosFix_waitTable = {}
@@ -115,12 +115,13 @@ cosFix.activateNextUnitAura = false
 -- Needed for Druid shapeshift changes.
 cosFix.updateShapeshiftFormCounter = 0
 
-
+-- Needed to register when we are changing from another druid form into travel form.
+-- Because this always triggers an event that looks like your are changing into
+-- normal druid, while you must not change the shoulder offset at this point.
 cosFix.waitingForUnitSpellcastSentSucceeded = false
-cosFix.unitSpellcastSentObserved = false
+cosFix.changingIntoTravelForm = false
 
-
--- Needed for changing into bear.
+-- Needed for changing into bear form.
 cosFix.activateNextHealthFrequent = false
 
 
@@ -141,6 +142,36 @@ cosFix.changingIntoWorgen = false
 cosFix.skipNextWorgenUnitModelChanged = 0
 
 
+
+
+
+
+-- Determine and set a the shoulder offset with or without a delay.
+function cosFix:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, delay)
+
+  local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
+  -- If CorrectShoulderOffset cannot find a valid offset, it returns -1.
+  -- In this case we do not change the shoulder offset at all
+  -- instead of just using a global default value, hoping to avoid camera jerks.
+  if (modelFactor == -1) then
+    return
+  end
+
+  local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
+
+  if (delay == 0) then
+    return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+  else
+    return cosFix_wait(delay, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+  end
+
+end
+
+
+
+
+
+
 function cosFix:ShoulderOffsetEventHandler(event, ...)
 
   -- print("##########################")
@@ -151,7 +182,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     return
   end
 
-  -- Got to stop shoulder offset easing that might already be in process.
+  -- Got to stop shoulder offset easing that might already be in progress.
   -- E.g. an easing started in ExitSituation() called at the same time as
   -- the execution of PLAYER_MOUNT_DISPLAY_CHANGED.
   -- Otherweise there is a problem, if you change directly from "mounted" to "shapeshifted".
@@ -336,16 +367,19 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * factor
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+
       end
 
     end  -- (raceFile == "Worgen")
 
+
     -- print("... doing nothing!")
+    -- TODO: Maybe we should???
 
 
   -- To suppress Worgen UNIT_MODEL_CHANGED after loading screen.
   -- After the loading screen (not after logging in though), we get three
-  -- UNIT_MODEL_CHANGED events, that would determine the wrong worgen model.
+  -- UNIT_MODEL_CHANGED events, that would determine the wrong Worgen model.
   -- These are suppresed here.
   elseif (event == "LOADING_SCREEN_DISABLED") then
     local _, raceFile = UnitRace("player")
@@ -365,13 +399,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         -- The UPDATE_SHAPESHIFT_FORM while changing into Ghostwolf comes too early.
         -- And also the subsequent UNIT_MODEL_CHANGED is still too early.
-        -- That is why we have to use the cosFix_wait timer instead.
-        local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-        if (modelFactor == -1) then
-          return
-        end
-        local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-        return cosFix_wait(0.01, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+        -- That is why we have to use  a delay instead.
+        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.01)
 
       else
         -- print("You are changing into normal Shaman!")
@@ -382,6 +411,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         self.activateNextUnitAura = true
 
         return
+
       end
 
 
@@ -413,21 +443,20 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- when changing back into normal depending on the current shapeshift form.
         self.db.char.lastformId = formId
 
-        -- This is needed to register when we are changing from one druid form
-        -- into travel form. Because then we have to
+
+        -- Just to be on the safe side, I guess...
         self.waitingForUnitSpellcastSentSucceeded = false
-        self.unitSpellcastSentObserved = false
+        self.changingIntoTravelForm = false
 
 
         if (formId == 1) then
           -- print("cat")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = false
-          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
 
           -- Sometimes you need this, sometimes the below... WTF
-          return cosFix_wait(0.06, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
-          -- return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.06)
+          -- return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
         elseif (formId == 5) then
           -- print("bear")
@@ -439,11 +468,10 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- print("travel or tree of light...")
           self.activateNextUnitAura = false
           self.activateNextHealthFrequent = false
-          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
 
           -- Sometimes you need this, sometimes the below... WTF
-          return cosFix_wait(0.018, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
-          -- return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.018)
+          -- return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
         end
 
@@ -451,8 +479,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- print("You are changing into normal Druid!")
 
         -- When changing from aquatic/travel form or Tree of Life into normal druid,
-        -- there is always a first UPDATE_SHAPESHIFT_FORM where in which
-        -- still the shapeshifted form is detected.
+        -- there is always a first UPDATE_SHAPESHIFT_FORM in which the old shapeshifted form is still detected.
         -- This will start a timer, which we have to revoke here.
         if ((self.db.char.lastformId == 2) or (self.db.char.lastformId == 3) or (self.db.char.lastformId == 4) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29)) then
           cosFix_waitTable = {}
@@ -465,21 +492,28 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- occurs sometimes sooner, sometimes later after the first UPDATE_SHAPESHIFT_FORM.
         if (self.db.char.lastformId ~= nil) then
           self.db.char.lastformId = nil
+
           self.updateShapeshiftFormCounter = 1
           -- print("Setting counter to", self.updateShapeshiftFormCounter)
 
+          -- Wait for the travel form spellcast to set changingIntoTravelForm in case.
           self.waitingForUnitSpellcastSentSucceeded = true
         else
           if (self.updateShapeshiftFormCounter == 0) then
 
-            if (self.unitSpellcastSentObserved == false) then
-              -- print("Reached updateShapeshiftFormCounter ==", self.updateShapeshiftFormCounter)
-              local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * self:CorrectShoulderOffset(userSetShoulderOffset)
-              return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-            else
+            if (self.changingIntoTravelForm == true) then
               -- print("Doing nothing because you are changing from a non-travel form into travel form.")
-              self.unitSpellcastSentObserved = false
+              self.changingIntoTravelForm = false
               return
+
+            else
+              -- print("Reached updateShapeshiftFormCounter ==", self.updateShapeshiftFormCounter)
+
+              -- We have not observed the travelform spellcast, so we do not need to wait for it any longer.
+              self.waitingForUnitSpellcastSentSucceeded = false
+
+              return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+
             end
 
           else
@@ -499,18 +533,11 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- Needed for changing into bear.
   elseif (event == "UNIT_HEALTH_FREQUENT") then
     if (self.activateNextHealthFrequent == true) then
-
       -- print("Executing UNIT_HEALTH_FREQUENT")
-
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-      if (modelFactor == -1) then
-        return
-      end
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-      return cosFix_wait(0.05, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.05)
     end
 
 
@@ -527,7 +554,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     -- one druid shapeshift form into travel form.
     if ((self.waitingForUnitSpellcastSentSucceeded == true) and (spellId == 783)) then
       self.waitingForUnitSpellcastSentSucceeded = false
-      self.unitSpellcastSentObserved = true
+      self.changingIntoTravelForm = true
     end
 
 
@@ -537,55 +564,52 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     if (IsMounted() == false) then
 
       -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == false")
-      local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-      if (modelFactor == -1) then
-        return
-      end
-
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
 
       -- Sometimes there is no UNIT_AURA after leaving a taxi.
       -- We can then set the value unmounted immedeately.
       if (self.db.char.isOnTaxi) then
         self.db.char.isOnTaxi = false
-        return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
+
       -- The same goes for being dismounted automatically while entering indoors.
       if (IsIndoors()) then
-        return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
-      -- The same goes for being diesmounted in certain outdoor areas
+
+      -- The same goes for being dismounted in certain outdoor areas
       -- (e.g. certain quest givers like Great-father Winter).
       -- This can be checked by trying if the last active mount is usable.
       -- Interestingly this does not work for entering indoors, so we still need the check above.
       local _, _, _, _, lastActiveMountUsable = C_MountJournal.GetMountInfoByID(self.db.char.lastActiveMount)
       if (not lastActiveMountUsable) then
-        return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
 
 
       -- Change the shoulder offset once here and then again with the next UNIT_AURA.
       self.activateNextUnitAura = true
+      -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/9
+
 
       -- When shoulder offset is greater than 0, we need to set it to 10 times its actual value
       -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next UNIT_AURA.
-
-      -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/9
-
-      -- But only if modelIndependentShoulderOffset is enabled.
-      if (self.db.profile.modelIndependentShoulderOffset and (correctedShoulderOffset > 0)) then
-        correctedShoulderOffset = correctedShoulderOffset * 10
-      end
-
-      return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-    else
-      -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == true")
       local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
       if (modelFactor == -1) then
         return
       end
       local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
+      -- But only if modelIndependentShoulderOffset is enabled.
+      if (self.db.profile.modelIndependentShoulderOffset and (correctedShoulderOffset > 0)) then
+        correctedShoulderOffset = correctedShoulderOffset * 10
+      end
       return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+
+
+    else
+      -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == true")
+      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+
     end
 
 
@@ -608,12 +632,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-      if (modelFactor == -1) then
-        return
-      end
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-      return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
     end
 
@@ -632,36 +651,22 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         if (spellId == 162264) then
           -- print("UNIT_AURA for METAMORPHOSIS HAVOC")
-          local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-          if (modelFactor == -1) then
-            return
-          end
-          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-          return cosFix_wait(0.69, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.69)
 
         elseif (spellId == 187827) then
           -- print("UNIT_AURA for METAMORPHOSIS VENGEANCE")
-          local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-          if (modelFactor == -1) then
-            return
-          end
-          local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-          return cosFix_wait(0.966, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.966)
+
         end
 
       end
 
       -- Changing into normal Demon Hunter form.
-      local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-      if (modelFactor == -1) then
-        return
-      end
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
       -- print("UNIT_AURA for DEMON HUNTER back to normal")
-      return cosFix_wait(0.082, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.082)
+
 
     end  -- (englishClass == "DEMONHUNTER")
-
 
     -- print("... doing nothing!")
 
@@ -689,24 +694,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       return
     end
 
-    local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-    if (modelFactor == -1) then
-      return
-    end
-    local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-    return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+    return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
 
   -- Needed for being teleported into a dungeon while mounted,
   -- because when entering you get automatically dismounted
   -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
   elseif (event == "PLAYER_ENTERING_WORLD") then
-    local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
-    if (modelFactor == -1) then
-      return
-    end
-    local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-    return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+    return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
   end
 
 end
