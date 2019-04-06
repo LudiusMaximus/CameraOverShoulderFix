@@ -63,13 +63,7 @@ cosFix.modelIdToShoulderOffsetFactor = {
   
   
   
-  -- Happens while changing from Tree of Life back to normal.
-  -- TODO: Should be avoided by catching the event!
-  [464148]  = 1.00,
-  
-  -- Happens when mounting while in flight form.
-  -- TODO: Should be avoided by catching the event!
-  [126077]  = 1.00,
+
   
   
 }
@@ -80,6 +74,45 @@ cosFix.modelIdToShoulderOffsetFactor = {
 cosFix.raceAndGenderToModelId = {
   -- race                      male           female
   ["Human"]              = {  [2] = 1011653,  [3] = 1000764 },
+  ["Dwarf"]              = {  [2] = 878772,   [3] = 950080 },
+  ["NightElf"]           = {  [2] = 974343,   [3] = 921844 },
+  ["Gnome"]              = {  [2] = 900914,   [3] = 940356 },
+  ["Draenei"]            = {  [2] = 1005887,  [3] = 1022598 },
   ["Worgen"]             = {  [2] = 307454,   [3] = 307453  },
+  
+  ["VoidElf"]            = {  [2] = 1734034,  [3] = 1733758  },
+  ["LightforgedDraenei"] = {  [2] = 1620605,  [3] = 1593999  },
+  ["DarkIronDwarf"]      = {  [2] = 1890765,  [3] = 1890763  },
+  ["KulTiran"]           = {  [2] = 1721003,  [3] = 1886724  },
+  
+  ["Orc"]                = {  [2] = 1968587,  [3] = 949470  },
+  ["Scourge"]            = {  [2] = 959310,   [3] = 997378  },
+  ["Tauren"]             = {  [2] = 968705,   [3] = 986648  },
+  ["Troll"]              = {  [2] = 1022938,  [3] = 1018060  },
+  ["BloodElf"]           = {  [2] = 1100087,  [3] = 1100258  },
+  ["Goblin"]             = {  [2] = 119376,   [3] = 119369  },
+  
+  ["Nightborne"]         = {  [2] = 1814471,  [3] = 1810676  },
+  ["HighmountainTauren"] = {  [2] = 1630218,  [3] = 1630402  },
+  ["MagharOrc"]          = {  [2] = 1968587,  [3] = 949470  },   -- Same as Orc
+  ["ZandalariTroll"]     = {  [2] = 1630447,  [3] = 1662187  },
+  
+  ["Pandaren"]           = {  [2] = 535052,   [3] = 589715  },
+  
 };
+
+
+
+
+cosFix.knownUnknownModelId = {
+
+  -- Happens while changing from Tree of Life back to normal.
+  [464148]  = 1.00,
+  
+  -- Happens when mounting while in flight form.
+  [126077]  = 1.00,
+
+};
+
+
 
