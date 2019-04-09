@@ -109,7 +109,13 @@ end
 cosFix.activateNextUnitAura = false
 
 
-
+-- Sometimes when dismounting automatically (e.g. because of mining or herbgathering)
+-- the PLAYER_MOUNT_DISPLAY_CHANGED event comes after the UNIT_AURA, so we cannot
+-- do our standard procedure. To recognise these cases, we wait for UNIT_AURA
+-- after each UNIT_SPELLCAST_SENT. If we see it before PLAYER_MOUNT_DISPLAY_CHANGED,
+-- we know that this special case has occured.
+cosFix.waitingForUnitAura = false
+cosFix.unitAuraBeforeMountDisplayChanged = false
 
 
 -- Needed for Druid shapeshift changes.
@@ -338,7 +344,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         -- Remember that the change into Worgen is complete.
         self.changingIntoWorgen = false
-        
+
         -- Set lastModelId to Worgen.
         self.db.char.lastModelId = modelId
 
@@ -540,6 +546,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
   -- Needed for Druid shapeshift changes.
+  -- And special dismounting cases.
   elseif (event == "UNIT_SPELLCAST_SENT") then
     local unitName, _, _, spellId = ...
 
@@ -554,6 +561,19 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.waitingForUnitSpellcastSentSucceeded = false
       self.changingIntoTravelForm = true
     end
+
+    -- Sometimes when dismounting automatically (e.g. because of mining or herbgathering)
+    -- the PLAYER_MOUNT_DISPLAY_CHANGED event comes after the UNIT_AURA, so we cannot
+    -- do our standard procedure. To recognise these cases, we wait for UNIT_AURA
+    -- after each UNIT_SPELLCAST_SENT. If we see it before PLAYER_MOUNT_DISPLAY_CHANGED,
+    -- we know that this special case has occured.
+    self.waitingForUnitAura = true
+    self.unitAuraBeforeMountDisplayChanged = false
+
+    -- But we only wait for a very short time, lest other UNIT_SPELLCAST_SENT
+    -- set the waitingForUnitAura making it look like we are still waiting when
+    -- the player dismounts for any other reason.
+    self:ScheduleTimer(function() self.waitingForUnitAura = false end, 0.1)
 
 
 
@@ -585,11 +605,29 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       end
 
 
+
+
+      -- If the UNIT_AURA after UNIT_SPELLCAST_SENT has already occured before
+      -- this PLAYER_MOUNT_DISPLAY_CHANGED, we must change the shoulder
+      -- offset immedeately.
+      if (self.unitAuraBeforeMountDisplayChanged == true) then
+        self.unitAuraBeforeMountDisplayChanged = false
+        print("###############################")
+        print("###DID YOU NOTICE ANYTHING?####")
+        print("###############################")
+	    -- TODO: If not, https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/12
+		-- has been resolved.
+        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+      end
+
+      -- Otherwise, we are good for our standard procedure
+      self.waitingForUnitAura = false
+
       -- Change the shoulder offset once here and then again with the next UNIT_AURA.
       self.activateNextUnitAura = true
-            
-      -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/12
+
       
+
       -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/9
 
 
@@ -637,6 +675,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
     end
 
+    -- Are we seeing this UNIT_AURA shortly after a UNIT_SPELLCAST_SENT
+    -- but before PLAYER_MOUNT_DISPLAY_CHANGED!
+    if (self.waitingForUnitAura == true) then
+      self.waitingForUnitAura = false
+      self.unitAuraBeforeMountDisplayChanged = true
+    end
 
 
     -- We are also using UNIT_AURA to get the right timing for Demon Hunter Metamorphosis.
@@ -736,6 +780,7 @@ function cosFix:RegisterEvents()
 
   -- Needed for mounting and entering taxis.
   self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
+  self:RegisterEvent("COMPANION_UPDATE", "ShoulderOffsetEventHandler")
 
   -- Needed to determine the right time to change shoulder offset when dismounting,
   -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.

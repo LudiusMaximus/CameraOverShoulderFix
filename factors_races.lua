@@ -57,15 +57,15 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [535052]  = 0.95,   -- Pandaren male
   [589715]  = 1.07,   -- Pandaren female
 
-  
+
   [124118]  = 0.87,   -- Furbolg Form (Stave of Fur and Claw)
   [118653]  = 1.03,   -- Dragonmaw Fel Orc male (Dragonmaw Illusion in BC Shadowmoon Valley)
-  
-  
-  
 
-  
-  
+
+
+
+
+
 }
 
 
@@ -79,26 +79,26 @@ cosFix.raceAndGenderToModelId = {
   ["Gnome"]              = {  [2] = 900914,   [3] = 940356 },
   ["Draenei"]            = {  [2] = 1005887,  [3] = 1022598 },
   ["Worgen"]             = {  [2] = 307454,   [3] = 307453  },
-  
+
   ["VoidElf"]            = {  [2] = 1734034,  [3] = 1733758  },
   ["LightforgedDraenei"] = {  [2] = 1620605,  [3] = 1593999  },
   ["DarkIronDwarf"]      = {  [2] = 1890765,  [3] = 1890763  },
   ["KulTiran"]           = {  [2] = 1721003,  [3] = 1886724  },
-  
+
   ["Orc"]                = {  [2] = 1968587,  [3] = 949470  },
   ["Scourge"]            = {  [2] = 959310,   [3] = 997378  },
   ["Tauren"]             = {  [2] = 968705,   [3] = 986648  },
   ["Troll"]              = {  [2] = 1022938,  [3] = 1018060  },
   ["BloodElf"]           = {  [2] = 1100087,  [3] = 1100258  },
   ["Goblin"]             = {  [2] = 119376,   [3] = 119369  },
-  
+
   ["Nightborne"]         = {  [2] = 1814471,  [3] = 1810676  },
   ["HighmountainTauren"] = {  [2] = 1630218,  [3] = 1630402  },
   ["MagharOrc"]          = {  [2] = 1968587,  [3] = 949470  },   -- Same as Orc
   ["ZandalariTroll"]     = {  [2] = 1630447,  [3] = 1662187  },
-  
+
   ["Pandaren"]           = {  [2] = 535052,   [3] = 589715  },
-  
+
 };
 
 
@@ -107,10 +107,12 @@ cosFix.raceAndGenderToModelId = {
 cosFix.knownUnknownModelId = {
 
   -- Happens while changing from Tree of Life back to normal.
-  [464148]  = 1.00,
-  
-  -- Happens when mounting while in flight form.
-  [126077]  = 1.00,
+  -- [464148]  = 1.00,
+
+  -- -- Happens when mounting while in flight form.
+  -- [126077]  = 1.00,
+
+  [926251]  = 1.00,   -- Ghostwolf
 
 };
 

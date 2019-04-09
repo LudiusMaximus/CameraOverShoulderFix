@@ -20,6 +20,7 @@ cosFix.mountIdToShoulderOffsetFactor = {
   [203] = 5.75,  -- Cenarion War Hippogryph
   [268] = 2.5,   -- Albino Drake
   [309] = 4.7,   -- White Kodo
+  [310] = 6.1,   -- Black Wolf
   [435] = 7.6,   -- Mountain Horse
   [547] = 5.7,   -- Hearthsteed
   [651] = 5.6,   -- Warlord's Deathwheel

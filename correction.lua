@@ -49,7 +49,7 @@ function cosFix:GetCurrentModelId()
   local modelId = modelFrame:GetModelFileID()
 
   if (modelId == nil) then
-  
+
     -- If it exists, use the lastModelId.
     if (self.db.char.lastModelId ~= nil) then
       modelId = self.db.char.lastModelId
@@ -59,10 +59,10 @@ function cosFix:GetCurrentModelId()
       local _, raceFile = UnitRace("player")
       modelId = self.raceAndGenderToModelId[raceFile][UnitSex("player")]
     end
-    
+
     -- Try again later to find the correct modelId.
     self:SetLastModelId()
-    
+
   -- If this is a known normal (no shapeshift) modelId, store it in lastModelId.
   elseif (self.modelIdToShoulderOffsetFactor[modelId] ~= nil) then
     self.db.char.lastModelId = modelId
@@ -97,13 +97,13 @@ function cosFix:SetLastModelId()
   else
     -- print("SetLastModelId determined", modelId)
     self.lastModelIdTimerId = nil
-    
+
 
     -- Only store and apply known normal modelIds.
     if (self.modelIdToShoulderOffsetFactor[modelId] ~= nil) then
-    
+
       self.db.char.lastModelId = modelId
-      
+
       -- Set the shoulder offset again!
       local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
       if IsAddOnLoaded("DynamicCam") then
@@ -127,11 +127,11 @@ function cosFix:GetOppositeLastWorgenModelId()
   -- No lastModelId.
   if (self.db.char.lastModelId == nil) then
     return self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
-  
+
   elseif (self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil) then
     cosFix:DebugPrint("SHOULD NEVER HAPPEN!")
     return self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
-  
+
   -- Normal case.
   elseif (self.db.char.lastModelId == self.raceAndGenderToModelId["Human"][UnitSex("player")]) then
     return self.raceAndGenderToModelId["Worgen"][UnitSex("player")]
@@ -160,6 +160,13 @@ end
 --                            This is necessary because while entering the vehicle, UnitInVehicle("player") will
 --                            still return 'false' while the camera is already regarding the vehicle's model.
 function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
+
+
+  -- local modelFrame = CreateFrame("PlayerModel")
+  -- modelFrame:SetUnit("player")
+  -- local modelId = modelFrame:GetModelFileID()
+  -- print("Current modelId", modelId)
+
 
   -- print("CorrectShoulderOffset", offset)
 
@@ -400,17 +407,17 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     end
 
     if (not metamorphosis) then
-    
+
       local modelId = self:GetCurrentModelId()
-      
-      
+
+
       if (modelId == nil) then
         -- We did all we can in GetCurrentModelId()...
         returnValue = -1
 
       -- This may happen for unknwon race models or shapeshift forms.
       elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
-      
+
         -- Check in a list of "known unknowns" (e.g. shapeshift forms) to suppress the debug output in case.
         if (self.knownUnknownModelId[modelId] == nil) then
           cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
@@ -418,19 +425,19 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
         -- If it exists, use the last known normal model.
         if (self.db.char.lastModelId) then
-        
+
           if (self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil) then
             cosFix:DebugPrint("SHOULD NEVER HAPPEN!")
             returnValue = -1
           else
             returnValue = self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId]
           end
-        
+
         else
           -- Otherwise do nothing!
           returnValue = -1
         end
-          
+
       else
         -- print("Using", modelId)
         returnValue = self.modelIdToShoulderOffsetFactor[modelId]
