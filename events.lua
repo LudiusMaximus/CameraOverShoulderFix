@@ -612,11 +612,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- offset immedeately.
       if (self.unitAuraBeforeMountDisplayChanged == true) then
         self.unitAuraBeforeMountDisplayChanged = false
-        print("###############################")
-        print("###DID YOU NOTICE ANYTHING?####")
-        print("###############################")
-	    -- TODO: If not, https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/12
-		-- has been resolved.
         return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
 
@@ -626,7 +621,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- Change the shoulder offset once here and then again with the next UNIT_AURA.
       self.activateNextUnitAura = true
 
-      
+
 
       -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/9
 

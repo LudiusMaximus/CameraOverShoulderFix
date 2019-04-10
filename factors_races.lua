@@ -58,10 +58,11 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [589715]  = 1.07,   -- Pandaren female
 
 
-  [124118]  = 0.87,   -- Furbolg Form (Stave of Fur and Claw)
+
+
   [118653]  = 1.03,   -- Dragonmaw Fel Orc male (Dragonmaw Illusion in BC Shadowmoon Valley)
-
-
+  [124118]  = 0.87,   -- Furbolg Form (Stave of Fur and Claw)
+  [1113034] = 1.2,    -- Murloc Costume
 
 
 

@@ -7,6 +7,7 @@ local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "A
 CosFix_OriginalSetCVar = SetCVar
 
 function CosFixSetCVar(...)
+
   local variable, value = ...
 
   if (variable == "test_cameraOverShoulder") then
@@ -18,9 +19,11 @@ function CosFixSetCVar(...)
     end
 
     value = value * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * modelFactor
+
+    CosFix_OriginalSetCVar(variable, value)
   end
 
-  CosFix_OriginalSetCVar(variable, value)
+
 end
 
 
@@ -155,13 +158,13 @@ function cosFix:OnEnable()
   UIParent:UnregisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
 
   -- Hooking functions.
-  SetCVar = CosFixSetCVar
-
   if (IsAddOnLoaded("DynamicCam") and (DynamicCam.db.profile.reactiveZoom.enabled)) then
     DynamicCam:ReactiveZoomOn()
   else
     self:NonReactiveZoomOn()
   end
+
+  hooksecurefunc("SetCVar", CosFixSetCVar)
 
 
   self:RegisterEvents()
@@ -177,10 +180,17 @@ end
 
 function cosFix:OnDisable()
 
+  -- TODO: Why do I even care??
+  -- https://www.wowinterface.com/forums/showthread.php?p=331896
+
+
   -- Unhooking functions.
-  SetCVar       = CosFix_OriginalSetCVar
   CameraZoomIn  = CosFix_OriginalCameraZoomIn
   CameraZoomOut = CosFix_OriginalCameraZoomOut
+
+  -- Cannot really undo hooksecurefunc, right?
+  -- https://www.wowinterface.com/forums/showthread.php?p=331896
+  SetCVar = CosFix_OriginalSetCVar
 
   self:UnregisterAllEvents()
 
