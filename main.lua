@@ -6,7 +6,10 @@ local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "A
 -- Hooking SetCVar().
 CosFix_OriginalSetCVar = SetCVar
 
+local runhook = true
 function CosFixSetCVar(...)
+
+  if not runhook then return end
 
   local variable, value = ...
 
@@ -23,10 +26,7 @@ function CosFixSetCVar(...)
     CosFix_OriginalSetCVar(variable, value)
   end
 
-
 end
-
-
 
 
 
@@ -45,9 +45,6 @@ if IsAddOnLoaded("DynamicCam") then
     DynamicCam:ReactiveZoomOn()
   end
 end
-
-
-
 
 
 
@@ -117,10 +114,14 @@ end
 
 
 function cosFix:NonReactiveZoomOn()
-  CameraZoomIn = CosFix_CameraZoomIn
+  CameraZoomIn  = CosFix_CameraZoomIn
   CameraZoomOut = CosFix_CameraZoomOut
 end
 
+function cosFix:NonReactiveZoomOff()
+  CameraZoomIn  = CosFix_OriginalCameraZoomIn
+  CameraZoomOut = CosFix_OriginalCameraZoomOut
+end
 
 
 -- Set the variables currently in the db.
@@ -149,6 +150,7 @@ function cosFix:OnInitialize()
   self:InitializeDatabase()
   self:InitializeOptions()
 
+  hooksecurefunc("SetCVar", CosFixSetCVar)
 end
 
 
@@ -164,7 +166,7 @@ function cosFix:OnEnable()
     self:NonReactiveZoomOn()
   end
 
-  hooksecurefunc("SetCVar", CosFixSetCVar)
+  runhook = true
 
 
   self:RegisterEvents()
@@ -180,17 +182,14 @@ end
 
 function cosFix:OnDisable()
 
-  -- TODO: Why do I even care??
-  -- https://www.wowinterface.com/forums/showthread.php?p=331896
-
-
   -- Unhooking functions.
-  CameraZoomIn  = CosFix_OriginalCameraZoomIn
-  CameraZoomOut = CosFix_OriginalCameraZoomOut
+  if (not IsAddOnLoaded("DynamicCam") or (not DynamicCam.db.profile.reactiveZoom.enabled)) then
+    self:NonReactiveZoomOff()
+  end
 
-  -- Cannot really undo hooksecurefunc, right?
-  -- https://www.wowinterface.com/forums/showthread.php?p=331896
-  SetCVar = CosFix_OriginalSetCVar
+  -- Cannot undo hooksecurefunc.
+  runhook = false
+
 
   self:UnregisterAllEvents()
 
@@ -199,7 +198,4 @@ function cosFix:OnDisable()
   UIParent:RegisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED");
 
 end
-
-
-
 
