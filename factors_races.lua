@@ -114,6 +114,8 @@ cosFix.knownUnknownModelId = {
   -- [126077]  = 1.00,
 
   [926251]  = 1.00,   -- Ghostwolf
+  
+  [1270180]  = 1.00,   -- Havoc Demon Hunter, BloodElf male
 
 };
 

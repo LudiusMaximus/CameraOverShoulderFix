@@ -671,7 +671,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     end
 
     -- Are we seeing this UNIT_AURA shortly after a UNIT_SPELLCAST_SENT
-    -- but before PLAYER_MOUNT_DISPLAY_CHANGED!
+    -- but before PLAYER_MOUNT_DISPLAY_CHANGED?
     if (self.waitingForUnitAura == true) then
       self.waitingForUnitAura = false
       self.unitAuraBeforeMountDisplayChanged = true
@@ -679,7 +679,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
     -- We are also using UNIT_AURA to get the right timing for Demon Hunter Metamorphosis.
-    -- Demon hunter always has to check for Metamorphosis.
     -- TODO: https://github.com/LudiusMaximus/CameraOverShoulderFix/issues/10
     local _, englishClass = UnitClass("player")
     if (englishClass == "DEMONHUNTER") then
@@ -691,7 +690,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         if (spellId == 162264) then
           -- print("UNIT_AURA for METAMORPHOSIS HAVOC")
-          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.69)
+          -- This is as good as it gets: sometimes left, sometimes right jerk...
+          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.68)
 
         elseif (spellId == 187827) then
           -- print("UNIT_AURA for METAMORPHOSIS VENGEANCE")
