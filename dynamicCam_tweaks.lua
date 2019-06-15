@@ -737,10 +737,8 @@ if IsAddOnLoaded("DynamicCam") then
               local modelFactor = cosFix:CorrectShoulderOffset(value);
               if (modelFactor ~= -1) then
                 local correctedShoulderOffset = value * cosFix:GetShoulderOffsetZoomFactor(zoomValue) * modelFactor;
-                if (GetCVar("test_cameraOverShoulder") ~= tostring(correctedShoulderOffset)) then
-                    stopEasingShoulderOffset();
-                    easeShoulderOffset(correctedShoulderOffset, transitionTime);
-                end
+                stopEasingShoulderOffset();
+                easeShoulderOffset(correctedShoulderOffset, transitionTime);
               end
               ---------------------------------------------------------
               -- End of added cosFix code -----------------------------
