@@ -1,4 +1,4 @@
-## Interface: 80100
+## Interface: 80200
 ## Title: CameraOverShoulderFix
 ## Author: LudiusMaximus
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.

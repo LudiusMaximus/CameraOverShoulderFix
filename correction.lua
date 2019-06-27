@@ -2,6 +2,12 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
+-- Frame to check what player model is active.
+if not cosFix.modelFrame then
+  cosFix.modelFrame = CreateFrame("PlayerModel")
+end
+
+
 
 
 -- Returns the mount ID of the currently active mount if any.
@@ -44,9 +50,8 @@ end
 function cosFix:GetCurrentModelId()
   -- print("GetCurrentModelId()")
 
-  local modelFrame = CreateFrame("PlayerModel")
-  modelFrame:SetUnit("player")
-  local modelId = modelFrame:GetModelFileID()
+  cosFix.modelFrame:SetUnit("player")
+  local modelId = cosFix.modelFrame:GetModelFileID()
 
   if (modelId == nil) then
 
@@ -82,9 +87,8 @@ cosFix.lastModelIdTimerId = nil
 function cosFix:SetLastModelId()
   -- print("SetLastModelId()")
 
-  local modelFrame = CreateFrame("PlayerModel")
-  modelFrame:SetUnit("player")
-  local modelId = modelFrame:GetModelFileID()
+  cosFix.modelFrame:SetUnit("player")
+  local modelId = cosFix.modelFrame:GetModelFileID()
   -- print(modelId)
 
   if (modelId == nil) then
@@ -162,9 +166,8 @@ end
 function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
 
-  -- local modelFrame = CreateFrame("PlayerModel")
-  -- modelFrame:SetUnit("player")
-  -- local modelId = modelFrame:GetModelFileID()
+  -- cosFix.modelFrame:SetUnit("player")
+  -- local modelId = cosFix.modelFrame:GetModelFileID()
   -- print("Current modelId", modelId)
 
 

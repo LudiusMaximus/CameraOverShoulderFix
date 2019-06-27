@@ -324,9 +324,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
       -- Try to determine the current form.
-      local modelFrame = CreateFrame("PlayerModel")
-      modelFrame:SetUnit("player")
-      local modelId = modelFrame:GetModelFileID()
+      cosFix.modelFrame:SetUnit("player")
+      local modelId = cosFix.modelFrame:GetModelFileID()
 
       -- print("UNIT_MODEL_CHANGED thinks you are", modelId, "while lastModelId is", self.db.char.lastModelId)
 
@@ -571,7 +570,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     self.unitAuraBeforeMountDisplayChanged = false
 
     -- But we only wait for a very short time, lest other UNIT_SPELLCAST_SENT
-    -- set the waitingForUnitAura making it look like we are still waiting when
+    -- set the waitingForUnitAura make it look like we are still waiting when
     -- the player dismounts for any other reason.
     self:ScheduleTimer(function() self.waitingForUnitAura = false end, 0.1)
 
