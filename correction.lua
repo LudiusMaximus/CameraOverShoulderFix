@@ -2,12 +2,32 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
+
+local CosFix_OriginalSetCVar = CosFix_OriginalSetCVar
+
+local C_MountJournal = C_MountJournal
+local GetShapeshiftFormID = GetShapeshiftFormID
+local GetUnitName = GetUnitName
+local IsAddOnLoaded = IsAddOnLoaded
+local IsMounted = IsMounted
+local UnitBuff = UnitBuff
+local UnitClass = UnitClass
+local UnitInVehicle = UnitInVehicle
+local UnitGUID = UnitGUID
+local UnitOnTaxi = UnitOnTaxi
+local UnitRace = UnitRace
+local UnitSex = UnitSex
+
+local pairs = pairs
+local strsplit = strsplit
+local tonumber = tonumber
+
+
+
 -- Frame to check what player model is active.
 if not cosFix.modelFrame then
   cosFix.modelFrame = CreateFrame("PlayerModel")
 end
-
-
 
 
 -- Returns the mount ID of the currently active mount if any.
@@ -108,17 +128,22 @@ function cosFix:SetLastModelId()
 
       self.db.char.lastModelId = modelId
 
+      
+
       -- Set the shoulder offset again!
-      local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
-      if IsAddOnLoaded("DynamicCam") then
-        userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+      if not cosFix.easeShoulderOffsetInProgress then
+      
+        local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+        if IsAddOnLoaded("DynamicCam") then
+          userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+        end
+        local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
+        local modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
+
+        local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
+        CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
       end
-      local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
-      local modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
-
-      local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
-      CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-
+      
     end
   end
 end

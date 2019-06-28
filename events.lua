@@ -2,6 +2,24 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
+local CosFix_OriginalSetCVar = CosFix_OriginalSetCVar
+
+local C_MountJournal = C_MountJournal
+local GetShapeshiftFormID = GetShapeshiftFormID
+local InCombatLockdown = InCombatLockdown
+local IsAddOnLoaded = IsAddOnLoaded
+local IsIndoors = IsIndoors
+local IsMounted = IsMounted
+local UnitBuff = UnitBuff
+local UnitClass = UnitClass
+local UnitRace = UnitRace
+local UnitSex = UnitSex
+
+local type = type
+local tremove = tremove
+local tinsert = tinsert
+local unpack = unpack
+
 -- Use this code to copy stuff from the eventtrace window into clipboard.
 -- Thanks a lot to Fizzlemizz:
 -- https://www.wowinterface.com/forums/showthread.php?t=56917
@@ -153,7 +171,12 @@ cosFix.skipNextWorgenUnitModelChanged = 0
 
 
 -- Determine and set a the shoulder offset with or without a delay.
-function cosFix:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, delay)
+function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, delay)
+
+  -- While shoulder offset easing is in progress
+  -- we do not want an event to set the target value too early.
+  if self.easeShoulderOffsetInProgress then return end
+
 
   local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
   -- If CorrectShoulderOffset cannot find a valid offset, it returns -1.
@@ -182,6 +205,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
   -- print("##########################")
   -- print("ShoulderOffsetEventHandler got event:", event, ...)
+  
+  
+  -- While shoulder offset easing is in progress
+  -- we do not want an event to set the target value too early.
+  if self.easeShoulderOffsetInProgress then return end
+  
 
   -- If both shoulder offset adjustments are disabled, do nothing!
   if (not self.db.profile.modelIndependentShoulderOffset and not self.db.profile.shoulderOffsetZoom) then
@@ -403,7 +432,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- The UPDATE_SHAPESHIFT_FORM while changing into Ghostwolf comes too early.
         -- And also the subsequent UNIT_MODEL_CHANGED is still too early.
         -- That is why we have to use  a delay instead.
-        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.01)
+        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.01)
 
       else
         -- print("You are changing into normal Shaman!")
@@ -458,8 +487,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           self.activateNextHealthFrequent = false
 
           -- Sometimes you need this, sometimes the below... WTF
-          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.06)
-          -- return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.06)
+          -- return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
         elseif (formId == 5) then
           -- print("bear")
@@ -473,8 +502,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           self.activateNextHealthFrequent = false
 
           -- Sometimes you need this, sometimes the below... WTF
-          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.018)
-          -- return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.018)
+          -- return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
         end
 
@@ -515,7 +544,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
               -- We have not observed the travelform spellcast, so we do not need to wait for it any longer.
               self.waitingForUnitSpellcastSentSucceeded = false
 
-              return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+              return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
             end
 
@@ -540,7 +569,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.05)
+      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.05)
     end
 
 
@@ -586,12 +615,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- We can then set the value unmounted immedeately.
       if (self.db.char.isOnTaxi) then
         self.db.char.isOnTaxi = false
-        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
 
       -- The same goes for being dismounted automatically while entering indoors.
       if (IsIndoors()) then
-        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
 
       -- The same goes for being dismounted in certain outdoor areas
@@ -600,7 +629,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- Interestingly this does not work for entering indoors, so we still need the check above.
       local _, _, _, _, lastActiveMountUsable = C_MountJournal.GetMountInfoByID(self.db.char.lastActiveMount)
       if (not lastActiveMountUsable) then
-        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
 
 
@@ -611,7 +640,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- offset immedeately.
       if (self.unitAuraBeforeMountDisplayChanged == true) then
         self.unitAuraBeforeMountDisplayChanged = false
-        return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
       end
 
       -- Otherwise, we are good for our standard procedure
@@ -641,7 +670,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
     else
       -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == true")
-      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
     end
 
@@ -665,7 +694,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
     end
 
@@ -690,11 +719,11 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         if (spellId == 162264) then
           -- print("UNIT_AURA for METAMORPHOSIS HAVOC")
           -- This is as good as it gets: sometimes left, sometimes right jerk...
-          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.68)
+          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.68)
 
         elseif (spellId == 187827) then
           -- print("UNIT_AURA for METAMORPHOSIS VENGEANCE")
-          return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.966)
+          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.966)
 
         end
 
@@ -702,7 +731,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       -- Changing into normal Demon Hunter form.
       -- print("UNIT_AURA for DEMON HUNTER back to normal")
-      return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.082)
+      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.082)
 
 
     end  -- (englishClass == "DEMONHUNTER")
@@ -733,14 +762,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       return
     end
 
-    return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+    return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
 
 
   -- Needed for being teleported into a dungeon while mounted,
   -- because when entering you get automatically dismounted
   -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
   elseif (event == "PLAYER_ENTERING_WORLD") then
-    return self:setShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+    return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
   end
 
 end
