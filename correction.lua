@@ -2,26 +2,28 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
+local _G = _G
+local pairs = _G.pairs
+local strsplit = _G.strsplit
+local tonumber = _G.tonumber
 
-local CosFix_OriginalSetCVar = CosFix_OriginalSetCVar
+local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
 
-local C_MountJournal = C_MountJournal
-local GetShapeshiftFormID = GetShapeshiftFormID
-local GetUnitName = GetUnitName
-local IsAddOnLoaded = IsAddOnLoaded
-local IsMounted = IsMounted
-local UnitBuff = UnitBuff
-local UnitClass = UnitClass
-local UnitInVehicle = UnitInVehicle
-local UnitGUID = UnitGUID
-local UnitOnTaxi = UnitOnTaxi
-local UnitRace = UnitRace
-local UnitSex = UnitSex
+local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
+local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
+local GetShapeshiftFormID = _G.GetShapeshiftFormID
+local GetUnitName = _G.GetUnitName
+local IsMounted = _G.IsMounted
+local UnitBuff = _G.UnitBuff
+local UnitClass = _G.UnitClass
+local UnitInVehicle = _G.UnitInVehicle
+local UnitGUID = _G.UnitGUID
+local UnitOnTaxi = _G.UnitOnTaxi
+local UnitRace = _G.UnitRace
+local UnitSex = _G.UnitSex
 
-local pairs = pairs
-local strsplit = strsplit
-local tonumber = tonumber
 
+local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
 
 
 -- Frame to check what player model is active.
@@ -35,25 +37,25 @@ function cosFix:GetCurrentMount()
 
   -- To skip the iteration through all mounts trying to find the active one,
   -- we store the last active mount to be checked first.
-  -- This variable is also used when C_MountJournal.GetMountInfoByID() cannot
+  -- This variable is also used when C_MountJournal_GetMountInfoByID() cannot
   -- identify the active mount even though isMounted() returns true. This
   -- happens when porting somewhere while being mounted or when in the Worgen
   -- "Running wild" state.
-  if (self.db.char.lastActiveMount) then
+  if self.db.char.lastActiveMount then
     -- print("Last active mount: " .. self.db.char.lastActiveMount)
-    local _, _, _, active = C_MountJournal.GetMountInfoByID(self.db.char.lastActiveMount)
-    if (active) then
+    local _, _, _, active = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
+    if active then
       return self.db.char.lastActiveMount
     end
   end
 
   -- This looks horribly ineffectice, but apparently there is no way of getting the
   -- currently active mount's id directly...
-  for k,v in pairs (C_MountJournal.GetMountIDs()) do
+  for k,v in pairs (C_MountJournal_GetMountIDs()) do
 
-    local _, _, _, active = C_MountJournal.GetMountInfoByID(v)
+    local _, _, _, active = C_MountJournal_GetMountInfoByID(v)
 
-    if (active) then
+    if active then
       -- Store current mount as last active mount.
       self.db.char.lastActiveMount = v
       return v
@@ -73,10 +75,10 @@ function cosFix:GetCurrentModelId()
   cosFix.modelFrame:SetUnit("player")
   local modelId = cosFix.modelFrame:GetModelFileID()
 
-  if (modelId == nil) then
+  if modelId == nil then
 
     -- If it exists, use the lastModelId.
-    if (self.db.char.lastModelId ~= nil) then
+    if self.db.char.lastModelId ~= nil then
       modelId = self.db.char.lastModelId
     -- Otherwise, if possible use the standard for the player's race and gender.
     -- Attention: May also be nil for unknown player races.
@@ -89,7 +91,7 @@ function cosFix:GetCurrentModelId()
     self:SetLastModelId()
 
   -- If this is a known normal (no shapeshift) modelId, store it in lastModelId.
-  elseif (self.modelIdToShoulderOffsetFactor[modelId] ~= nil) then
+  elseif self.modelIdToShoulderOffsetFactor[modelId] ~= nil then
     self.db.char.lastModelId = modelId
   end
 
@@ -111,7 +113,7 @@ function cosFix:SetLastModelId()
   local modelId = cosFix.modelFrame:GetModelFileID()
   -- print(modelId)
 
-  if (modelId == nil) then
+  if modelId == nil then
     if (self.lastModelIdTimerId == nil) or (self.lastModelIdTimerId and self:TimeLeft(self.lastModelIdTimerId) < 0) then
       -- print("Restarting!")
       self.lastModelIdTimerId = self:ScheduleTimer("SetLastModelId", 0.01)
@@ -124,7 +126,7 @@ function cosFix:SetLastModelId()
 
 
     -- Only store and apply known normal modelIds.
-    if (self.modelIdToShoulderOffsetFactor[modelId] ~= nil) then
+    if self.modelIdToShoulderOffsetFactor[modelId] ~= nil then
 
       self.db.char.lastModelId = modelId
 
@@ -134,7 +136,7 @@ function cosFix:SetLastModelId()
       if not cosFix.easeShoulderOffsetInProgress then
       
         local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
-        if IsAddOnLoaded("DynamicCam") then
+        if dynamicCamLoaded then
           userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
         end
         local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
@@ -154,17 +156,17 @@ end
 function cosFix:GetOppositeLastWorgenModelId()
 
   -- No lastModelId.
-  if (self.db.char.lastModelId == nil) then
+  if self.db.char.lastModelId == nil then
     return self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
 
-  elseif (self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil) then
+  elseif self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil then
     cosFix:DebugPrint("SHOULD NEVER HAPPEN!")
     return self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
 
   -- Normal case.
-  elseif (self.db.char.lastModelId == self.raceAndGenderToModelId["Human"][UnitSex("player")]) then
+  elseif self.db.char.lastModelId == self.raceAndGenderToModelId["Human"][UnitSex("player")] then
     return self.raceAndGenderToModelId["Worgen"][UnitSex("player")]
-  elseif (self.db.char.lastModelId == self.raceAndGenderToModelId["Worgen"][UnitSex("player")]) then
+  elseif self.db.char.lastModelId == self.raceAndGenderToModelId["Worgen"][UnitSex("player")] then
     return self.raceAndGenderToModelId["Human"][UnitSex("player")]
 
   -- Valid last lastModelId but neither Worgen nor Human.
@@ -199,12 +201,12 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
   -- print("CorrectShoulderOffset", offset)
 
   -- If the "Correct Shoulder Offset" function is deactivated, we do not correct the offset.
-  if (not self.db.profile.modelIndependentShoulderOffset) then
+  if not self.db.profile.modelIndependentShoulderOffset then
     return 1
   end
 
   -- If no offset is set, there is no need to correct it.
-  if (offset == 0) then
+  if offset == 0 then
     return 1
   end
 
@@ -212,11 +214,11 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
   local returnValue = 1
 
   -- Is the player entering a vehicle or already in a vehicle?
-  if (enteringVehicleGuid or UnitInVehicle("player")) then
+  if enteringVehicleGuid or UnitInVehicle("player") then
     -- print("You are entering or on a vehicle.")
 
     local vehicleGuid = ""
-    if (enteringVehicleGuid) then
+    if enteringVehicleGuid then
       vehicleGuid = enteringVehicleGuid
       -- print("Entering vehicle.")
     else
@@ -233,11 +235,11 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     -- print(vehicleId)
 
     -- Is the vehicle form already in the code?
-    if (self.vehicleIdToShoulderOffsetFactor[vehicleId]) then
+    if self.vehicleIdToShoulderOffsetFactor[vehicleId] then
       returnValue = self.vehicleIdToShoulderOffsetFactor[vehicleId]
     else
       local vehicleName = GetUnitName("vehicle", false)
-      if (vehicleName == nil) then
+      if vehicleName == nil then
         cosFix:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". Zoom in or out to get message including vehicle name!")
       else
         cosFix:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known...")
@@ -249,25 +251,25 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
 
   -- Is the player mounted?
-  elseif (IsMounted()) then
+  elseif IsMounted() then
     -- print("You are mounted.")
 
     -- No idea why this is necessary when mounted; seems to be a persistent bug on Blizzard's side!
     local mountedFactor = 1
-    if (offset < 0) then
+    if offset < 0 then
       mountedFactor = mountedFactor / 10
     end
 
     -- Is the player really mounted and not on a "taxi"?
-    if (not UnitOnTaxi("player")) then
+    if not UnitOnTaxi("player") then
 
       local mountId = self:GetCurrentMount()
       -- print(mountId)
 
       -- Right after logging in while on a mount it happens that "IsMounted()" returns true,
-      -- but C_MountJournal.GetMountInfoByID() is not yet able to determine that the mount is active.
+      -- but C_MountJournal_GetMountInfoByID() is not yet able to determine that the mount is active.
       -- Furthermore, when in Worgen "Running wild" state, you get isMounted() without a mount.
-      if (mountId == nil) then
+      if mountId == nil then
         -- print("Mounted but no mount")
 
         -- Check for special buffs.
@@ -277,7 +279,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
           -- print (name, spellId)
 
-          if (spellId == 87840) then
+          if spellId == 87840 then
             -- print("Running wild")
 
             -- This is actually only needed for the unlikely case that at any point
@@ -285,7 +287,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             local modelId = self:GetCurrentModelId()
 
             -- If an unknown modelId is returned, assume that we are Worgen (more likely than any other model).
-            if ((modelId == nil) or (self.modelIdToShoulderOffsetFactor[modelId] == nil)) then
+            if (modelId == nil) or (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
               returnValue = mountedFactor * self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
             else
               -- This would also work for "Running wild" with any other model in modelIdToShoulderOffsetFactor.
@@ -295,7 +297,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             specialBuffActive = true
             break
 
-          elseif (spellId == 40212) then
+          elseif spellId == 40212 then
             -- print("Dragonmaw Nether Drake")
             returnValue = mountedFactor * 2.5
             specialBuffActive = true
@@ -304,17 +306,17 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         end
 
 
-        if (not specialBuffActive) then
+        if not specialBuffActive then
           -- Should only happen when logging in mounted with a character after purging of SavedVariables.
-          if (self.db.char.lastActiveMount == nil) then
+          if self.db.char.lastActiveMount == nil then
             returnValue = mountedFactor * 6
           -- Use the last active mount.
           else
             -- Is the mount already in the code?
-            if (self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]) then
+            if self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount] then
               returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
             else
-              local creatureName = C_MountJournal.GetMountInfoByID(self.db.char.lastActiveMount)
+              local creatureName = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
               cosFix:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known...")
               -- Default for all other mounts...
               returnValue = mountedFactor * 6
@@ -325,10 +327,10 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
       -- mountId not nil
       else
         -- Is the mount already in the code?
-        if (self.mountIdToShoulderOffsetFactor[mountId]) then
+        if self.mountIdToShoulderOffsetFactor[mountId] then
           returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
         else
-          local creatureName = C_MountJournal.GetMountInfoByID(mountId)
+          local creatureName = C_MountJournal_GetMountInfoByID(mountId)
           cosFix:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known...")
           -- Default for all other mounts...
           returnValue = mountedFactor * 6
@@ -351,22 +353,22 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
   -- Is the player shapeshifted?
   -- Shapeshift form (id 30) is stealth and should be treated like normal.
-  elseif ((GetShapeshiftFormID(true) ~= nil) and (GetShapeshiftFormID(true) ~= 30)) then
+  elseif (GetShapeshiftFormID(true) ~= nil) and (GetShapeshiftFormID(true) ~= 30) then
     -- print("You are shapeshifted.")
 
     local _, englishClass = UnitClass("player")
     local formId = GetShapeshiftFormID(true)
 
-    if (englishClass == "DRUID") then
+    if englishClass == "DRUID" then
 
       local _, raceFile = UnitRace("player")
-      if (self.druidFormIdToShoulderOffsetFactor[raceFile]) then
+      if self.druidFormIdToShoulderOffsetFactor[raceFile] then
 
         local genderCode = UnitSex("player")
-        if (self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode]) then
+        if self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode] then
 
 
-          if (self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId]) then
+          if self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId] then
             returnValue = self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId]
           else
             cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factor for form id " .. formId .. " not yet known...")
@@ -381,7 +383,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         returnValue = 1
       end
 
-    elseif (formId == 16) then
+    elseif formId == 16 then
       -- print("...Ghostwolf")
       returnValue = self.shamanGhostwolfToShoulderOffsetFactor[formId]
 
@@ -402,13 +404,13 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
     -- Check for Demon Hunter Metamorphosis.
     local metamorphosis = false
-    if (englishClass == "DEMONHUNTER") then
+    if englishClass == "DEMONHUNTER" then
       for i = 1,40 do
         local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
         -- print(name, spellId)
-        if (spellId == 162264) then
+        if spellId == 162264 then
           -- print("Demon Hunter Metamorphosis Havoc")
-          if (self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]) then
+          if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"] then
             returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
           else
             cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Havoc' not yet known...")
@@ -418,9 +420,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           metamorphosis = true
           break
 
-        elseif (spellId == 187827) then
+        elseif spellId == 187827 then
           -- print("Demon Hunter Metamorphosis Vengeance")
-          if (self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]) then
+          if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"] then
             returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]
           else
             cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Vengeance' not yet known...")
@@ -434,27 +436,27 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
       end
     end
 
-    if (not metamorphosis) then
+    if not metamorphosis then
 
       local modelId = self:GetCurrentModelId()
 
 
-      if (modelId == nil) then
+      if modelId == nil then
         -- We did all we can in GetCurrentModelId()...
         returnValue = -1
 
       -- This may happen for unknwon race models or shapeshift forms.
-      elseif (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
+      elseif self.modelIdToShoulderOffsetFactor[modelId] == nil then
 
         -- Check in a list of "known unknowns" (e.g. shapeshift forms) to suppress the debug output in case.
-        if (self.knownUnknownModelId[modelId] == nil) then
+        if self.knownUnknownModelId[modelId] == nil then
           cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
         end
 
         -- If it exists, use the last known normal model.
-        if (self.db.char.lastModelId) then
+        if self.db.char.lastModelId then
 
-          if (self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil) then
+          if self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil then
             cosFix:DebugPrint("SHOULD NEVER HAPPEN!")
             returnValue = -1
           else
@@ -487,16 +489,16 @@ function cosFix:GetShoulderOffsetZoomFactor(zoomLevel)
 
   -- print("GetShoulderOffsetZoomFactor(" .. zoomLevel .. ")")
 
-  if (not self.db.profile.shoulderOffsetZoom) then
+  if not self.db.profile.shoulderOffsetZoom then
     return 1
   end
 
   local startDecrease = 8
   local finishDecrease = 2
 
-  if (zoomLevel < finishDecrease) then
+  if zoomLevel < finishDecrease then
     return 0
-  elseif (zoomLevel < startDecrease) then
+  elseif zoomLevel < startDecrease then
     return (zoomLevel-finishDecrease) / (startDecrease-finishDecrease)
   else
     return 1

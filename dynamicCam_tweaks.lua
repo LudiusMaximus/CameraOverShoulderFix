@@ -2,38 +2,42 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
+local _G = _G
+local math_abs = _G.math.abs
+local math_floor = _G.math.floor
+local math_max = _G.math.max
+local math_min = _G.math.min
+local pairs = _G.pairs
+local string_find = _G.string.find
+local string_sub = _G.string.sub
+local tostring = _G.tostring
+local tonumber = _G.tonumber
+local type = _G.type
+local wipe = _G.wipe
 
-local DynamicCam = DynamicCam
+local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
+local oldCameraZoomIn = _G.CosFix_CameraZoomIn
+local oldCameraZoomOut = _G.CosFix_CameraZoomOut
 
-local CosFix_OriginalSetCVar = CosFix_OriginalSetCVar
-local oldCameraZoomIn = CosFix_CameraZoomIn
-local oldCameraZoomOut = CosFix_CameraZoomOut
+local GetCameraZoom = _G.GetCameraZoom
 
-local IsAddOnLoaded = IsAddOnLoaded
-local GetCVar = GetCVar
-local SetCVar = SetCVar
-local SetView = SetView
-local SaveView = SaveView
-local UIParent = UIParent
-local ResetTestCvars = ResetTestCvars
+local GetCVar = _G.GetCVar
+local ResetTestCvars = _G.ResetTestCvars
+local SetCVar = _G.SetCVar
+local SaveView = _G.SaveView
+local SetView = _G.SetView
+local UIParent = _G.UIParent
 
-local GetCameraZoom = GetCameraZoom
+-- Nameplate stuff...
+local C_NamePlate_GetNamePlateForUnit = _G.C_NamePlate.GetNamePlateForUnit
+local UnitExists = _G.UnitExists
+local UnitIsFriend = _G.UnitIsFriend
+local GetScreenHeight = _G.GetScreenHeight
+local GetTime = _G.GetTime
+local StaticPopup_Show = _G.StaticPopup_Show
+local InterfaceOptionsFrame_OpenToCategory = _G.InterfaceOptionsFrame_OpenToCategory
 
-local UnitExists = UnitExists
-local UnitIsFriend = UnitIsFriend
-local C_NamePlate = C_NamePlate
-local GetScreenHeight = GetScreenHeight
-local GetTime = GetTime
-local StaticPopup_Show = StaticPopup_Show
-local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
-
-local tostring = tostring
-local tonumber = tonumber
-local type = type
-local math = math
-local wipe = wipe
-local string = string
-local pairs = pairs
+local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
 
 
 
@@ -65,7 +69,7 @@ local pairs = pairs
 --     ApplyDefaultCameraSettings() called at the beginning of ExitSituation()).
 
 
-if IsAddOnLoaded("DynamicCam") then
+if dynamicCamLoaded then
 
 
   -- Shut down DynamicCam before defining the duplicate functions and variables.
@@ -172,7 +176,7 @@ if IsAddOnLoaded("DynamicCam") then
 
   local function round(num, numDecimalPlaces)
       local mult = 10^(numDecimalPlaces or 0);
-      return math.floor(num * mult + 0.5) / mult;
+      return math_floor(num * mult + 0.5) / mult;
   end
 
   local function gotoView(view, instant)
@@ -423,7 +427,7 @@ if IsAddOnLoaded("DynamicCam") then
       local startTime = GetTime();
       local settleTimeStart;
       local zoomFunc = function() -- returning 0 will stop camera, returning nil stops camera, returning number puts camera to that speed
-          local nameplate = C_NamePlate.GetNamePlateForUnit("target");
+          local nameplate = C_NamePlate_GetNamePlateForUnit("target");
 
           if (nameplate) then
               local yCenter = (nameplate:GetTop() + nameplate:GetBottom())/2;
@@ -711,7 +715,7 @@ if IsAddOnLoaded("DynamicCam") then
           transitionTime = this.transitionTime;
       end
       -- min 10 frames
-      transitionTime = math.max(10.0/60.0, transitionTime);
+      transitionTime = math_max(10.0/60.0, transitionTime);
 
       -- set view settings
       if (situation.view.enabled) then
@@ -747,7 +751,7 @@ if IsAddOnLoaded("DynamicCam") then
           elseif (a.zoomSetting == "fit") then
               local min = a.zoomMin;
               if (a.zoomFitUseCurAsMin) then
-                  min = math.min(GetCameraZoom(), a.zoomMax);
+                  min = math_min(GetCameraZoom(), a.zoomMax);
               end
 
               fitNameplate(min, a.zoomMax, a.zoomFitPosition, a.zoomFitContinous, a.zoomFitToggleNameplate);
@@ -755,7 +759,7 @@ if IsAddOnLoaded("DynamicCam") then
 
           -- actually do zoom
           if (newZoomLevel) then
-              local difference = math.abs(newZoomLevel - cameraZoom)
+              local difference = math_abs(newZoomLevel - cameraZoom)
               local linearSpeed = difference / transitionTime;
               local currentSpeed = tonumber(GetCVar("cameraZoomSpeed"));
               local duration = transitionTime;
@@ -763,7 +767,7 @@ if IsAddOnLoaded("DynamicCam") then
               -- if zoom speed is lower than current speed, then calculate a new transitionTime
               if (a.timeIsMax and linearSpeed < currentSpeed) then
                   -- min time 10 frames
-                  duration = math.max(10.0/60.0, difference / currentSpeed)
+                  duration = math_max(10.0/60.0, difference / currentSpeed)
               end
 
               DynamicCam:DebugPrint("Setting zoom level because of situation entrance", newZoomLevel, duration);
@@ -834,7 +838,7 @@ if IsAddOnLoaded("DynamicCam") then
 
       -- EXTRAS --
       if (situation.extras.hideUI) then
-          fadeUI(situation.extras.hideUIFadeOpacity, math.min(0.5, transitionTime), situation.extras.actuallyHideUI);
+          fadeUI(situation.extras.hideUIFadeOpacity, math_min(0.5, transitionTime), situation.extras.actuallyHideUI);
       end
 
       DynamicCam:SendMessage("DC_SITUATION_ENTERED");
@@ -946,8 +950,8 @@ if IsAddOnLoaded("DynamicCam") then
       if (DynamicCam:ShouldRestoreZoom(situationID, newSituationID)) then
           restoringZoom = true;
 
-          local defaultTime = math.abs(restoration[situationID].zoom - GetCameraZoom()) / tonumber(GetCVar("cameraZoomSpeed"));
-          local t = math.max(10.0/60.0, math.min(defaultTime, .75));
+          local defaultTime = math_abs(restoration[situationID].zoom - GetCameraZoom()) / tonumber(GetCVar("cameraZoomSpeed"));
+          local t = math_max(10.0/60.0, math_min(defaultTime, .75));
           local zoomLevel = restoration[situationID].zoom;
 
           LibCamera:SetZoom(zoomLevel, t, LibEasing[DynamicCam.db.profile.easingZoom]);
@@ -1030,7 +1034,7 @@ if IsAddOnLoaded("DynamicCam") then
               suffix = "|r";
           end
 
-          if (string.find(id, "custom")) then
+          if (string_find(id, "custom")) then
               customPrefix = "Custom: ";
           end
 
@@ -1105,10 +1109,10 @@ if IsAddOnLoaded("DynamicCam") then
       -- go through each and every situation, look for the custom ones, and find the
       -- highest custom id
       for id, situation in pairs(DynamicCam.db.profile.situations) do
-          local i, j = string.find(id, "custom");
+          local i, j = string_find(id, "custom");
 
           if (i and j) then
-              local num = tonumber(string.sub(id, j+1));
+              local num = tonumber(string_sub(id, j+1));
 
               if (num and num > highest) then
                   highest = num;
@@ -1141,7 +1145,7 @@ if IsAddOnLoaded("DynamicCam") then
           DynamicCam:DebugPrint("Cannot delete this situation since it doesn't exist", situationID)
       end
 
-      if (not string.find(situationID, "custom")) then
+      if (not string_find(situationID, "custom")) then
           DynamicCam:DebugPrint("Cannot delete a non-custom situation");
       end
 
@@ -1316,7 +1320,7 @@ if IsAddOnLoaded("DynamicCam") then
           -- scale increments up
           if (increments == 1) then
               if (targetZoom) then
-                  local diff = math.abs(targetZoom - currentZoom);
+                  local diff = math_abs(targetZoom - currentZoom);
 
                   if (diff > incAddDifference) then
                       increments = increments + addIncrementsAlways + addIncrements;
@@ -1332,9 +1336,9 @@ if IsAddOnLoaded("DynamicCam") then
           targetZoom = targetZoom or currentZoom;
 
           if (zoomIn) then
-              targetZoom = math.max(0, targetZoom - increments);
+              targetZoom = math_max(0, targetZoom - increments);
           else
-              targetZoom = math.min(39, targetZoom + increments);
+              targetZoom = math_min(39, targetZoom + increments);
           end
 
           -- if we don't need to zoom because we're at the max limits, then don't
@@ -1347,7 +1351,7 @@ if IsAddOnLoaded("DynamicCam") then
           targetZoom = round(targetZoom, 1);
 
           -- get the current time to zoom if we were going linearly or use maxZoomTime, if that's too high
-          local zoomTime = math.min(maxZoomTime, math.abs(targetZoom - currentZoom)/tonumber(GetCVar("cameraZoomSpeed")));
+          local zoomTime = math_min(maxZoomTime, math_abs(targetZoom - currentZoom)/tonumber(GetCVar("cameraZoomSpeed")));
 
 
           ---------------------------------------------------------
@@ -1700,8 +1704,8 @@ if IsAddOnLoaded("DynamicCam") then
       end
 
       if (zoom and (zoom <= 39 or zoom >= 0)) then
-          local defaultTime = math.abs(zoom - GetCameraZoom()) / tonumber(GetCVar("cameraZoomSpeed"));
-          LibCamera:SetZoom(zoom, time or math.min(defaultTime, 0.75), easingFunc);
+          local defaultTime = math_abs(zoom - GetCameraZoom()) / tonumber(GetCVar("cameraZoomSpeed"));
+          LibCamera:SetZoom(zoom, time or math_min(defaultTime, 0.75), easingFunc);
       end
   end
   DynamicCam.ZoomSlash = ZoomSlash
