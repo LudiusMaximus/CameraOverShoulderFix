@@ -2,6 +2,11 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0")
 
 
+-- TODO: Build a frame to enter new model factors!
+-- https://www.wowace.com/projects/ace3/pages/ace-db-3-0-tutorial
+-- https://www.wowace.com/projects/ace3/pages/ace-gui-3-0-widgets
+
+
 local _G = _G
 local pairs = _G.pairs
 
@@ -12,10 +17,13 @@ local GetCameraZoom = _G.GetCameraZoom
 
 local DynamicCam = _G.DynamicCam
 
-local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
+local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
 
 
+-- While shoulder offset easing is in progress
+-- we do not want an event to set the target value too early.
 cosFix.easeShoulderOffsetInProgress = false
+
 
 local runhook = true
 local function CosFixSetCVar(...)
@@ -64,17 +72,12 @@ function CosFix_CameraZoomIn(...)
 
   -- While shoulder offset easing is in progress
   -- we do not want zooming to set the target value too early.
+  -- The shoulder offset easing will always take the current zoom into account!
   if not cosFix.easeShoulderOffsetInProgress then
   
     local increments = ...
-    local currentZoom = GetCameraZoom()
 
-    -- Determine final zoom level.
-    if targetZoom and (targetZoom > currentZoom) then
-      targetZoom = nil
-    end
-    targetZoom = targetZoom or currentZoom
-    targetZoom = math.max(0, targetZoom - increments)
+    local targetZoom = math.max(0, GetCameraZoom() - increments)
 
     local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
     if dynamicCamLoaded then
@@ -100,17 +103,12 @@ function CosFix_CameraZoomOut(...)
 
   -- While shoulder offset easing is in progress
   -- we do not want zooming to set the target value too early.
+  -- The shoulder offset easing will always take the current zoom into account!
   if not cosFix.easeShoulderOffsetInProgress then
-  
-    local increments = ...
-    local currentZoom = GetCameraZoom()
 
-    -- Determine final zoom level.
-    if targetZoom and (targetZoom < currentZoom) then
-      targetZoom = nil
-    end
-    targetZoom = targetZoom or currentZoom;
-    targetZoom = math.min(39, targetZoom + increments)
+    local increments = ...
+
+    targetZoom = math.min(39, GetCameraZoom() + increments)
 
     local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
     if dynamicCamLoaded then

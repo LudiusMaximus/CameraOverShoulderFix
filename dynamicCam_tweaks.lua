@@ -37,8 +37,6 @@ local GetTime = _G.GetTime
 local StaticPopup_Show = _G.StaticPopup_Show
 local InterfaceOptionsFrame_OpenToCategory = _G.InterfaceOptionsFrame_OpenToCategory
 
-local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
-
 
 
 -- To integrate CameraOverShoulderFix into DynamicCam I would have needed
@@ -69,7 +67,13 @@ local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
 --     ApplyDefaultCameraSettings() called at the beginning of ExitSituation()).
 
 
-if dynamicCamLoaded then
+-- This is the factor by which the userSetShoulderOffset must be multiplied at all times.
+-- This is particularly important for shoulderOffset easing, because the factor may change
+-- while the easing is happening.
+cosFix.shoulderOffsetModelFactor = 1
+
+
+if IsAddOnLoaded("DynamicCam") then
 
 
   -- Shut down DynamicCam before defining the duplicate functions and variables.
@@ -210,13 +214,22 @@ if dynamicCamLoaded then
   local easeShoulderOffsetHandle;
 
   local function setShoulderOffset(offset)
+
+      ---------------------------------------------------------
+      -- Begin of added cosFix code ---------------------------
+      ---------------------------------------------------------
+      offset = offset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.shoulderOffsetModelFactor
+      ---------------------------------------------------------
+      -- End of added cosFix code ---------------------------
+      ---------------------------------------------------------
+
       if (offset and type(offset) == 'number') then
           CosFix_OriginalSetCVar("test_cameraOverShoulder", offset)
       end
   end
 
   local function stopEasingShoulderOffset()
-      
+
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
       ---------------------------------------------------------
@@ -224,7 +237,7 @@ if dynamicCamLoaded then
       ---------------------------------------------------------
       -- End of added cosFix code ---------------------------
       ---------------------------------------------------------
-      
+
       if (easeShoulderOffsetHandle) then
           LibEasing:StopEasing(easeShoulderOffsetHandle);
           easeShoulderOffsetHandle = nil;
@@ -235,19 +248,26 @@ if dynamicCamLoaded then
       stopEasingShoulderOffset();
 
       local oldOffest = tonumber(GetCVar("test_cameraOverShoulder"));
-      
+
       DynamicCam:DebugPrint("test_cameraOverShoulder", oldOffest, "->", endValue);
-      
-      
+
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
       ---------------------------------------------------------
+
+      -- setShoulderOffset does the correction at any call.
+      -- This is why oldOffest and endValue must be the uncorrected values!
+      oldOffest = oldOffest / (cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.shoulderOffsetModelFactor)
+
+      if oldOffest == endValue then return end
+
+      -- Store that we are currently easing,
+      -- such that no triggered event will set the shoulder offset prematurely.
+      -- The events just set cosFix.shoulderOffsetModelFactor to new value.
+      -- (Calling setShoulderOffset() again should not be necessary during easing.)
+      cosFix.easeShoulderOffsetInProgress = true
       easeShoulderOffsetHandle = LibEasing:Ease(setShoulderOffset, oldOffest, endValue, duration, easingFunc,
         function() cosFix.easeShoulderOffsetInProgress = false end );
-
-      -- Set a flag when easing is in progress, such that
-      -- no events will set the target shoulder offset to early.
-      cosFix.easeShoulderOffsetInProgress = true
 
       ---------------------------------------------------------
       -- End of added cosFix code ---------------------------
@@ -728,6 +748,7 @@ if dynamicCamLoaded then
 
       -- ZOOM --
       if (not skipZoom) then
+
           -- save old zoom level
           local cameraZoom = GetCameraZoom();
           restoration[situationID].zoom = round(cameraZoom, 1);
@@ -772,7 +793,18 @@ if dynamicCamLoaded then
 
               DynamicCam:DebugPrint("Setting zoom level because of situation entrance", newZoomLevel, duration);
 
-              LibCamera:SetZoom(newZoomLevel, duration, LibEasing[DynamicCam.db.profile.easingZoom]);
+              ---------------------------------------------------------
+              -- Begin of added cosFix code ---------------------------
+              ---------------------------------------------------------
+              -- CameraZoomIn and CameraZoomOut normally update the shoulder offset depending on
+              -- cosFix:getUserSetShoulderOffset(). But here we want easeShoulderOffset() to make
+              -- the transition gradually. Therefore, we have to set the easeShoulderOffsetInProgress flag.
+              cosFix.easeShoulderOffsetInProgress = true;
+              LibCamera:SetZoom(newZoomLevel, duration, LibEasing[DynamicCam.db.profile.easingZoom],
+                function() cosFix.easeShoulderOffsetInProgress = false end );
+              ---------------------------------------------------------
+              -- End of added cosFix code -----------------------------
+              ---------------------------------------------------------
           end
 
           -- if we didn't adjust the zoom, then reset oldZoom
@@ -791,26 +823,23 @@ if dynamicCamLoaded then
               ---------------------------------------------------------
               -- Begin of added cosFix code ---------------------------
               ---------------------------------------------------------
-              
+
               -- When we are entering a view, there is no additional zoom for
               -- the situation. We also want to ignore the transition time
               -- but ease test_cameraOverShoulder with the same user set
               -- transition time (ideally as fast as the changing of the view).
-              local zoomValue = GetCameraZoom();
               local shoulderTransitionTime = transitionTime
-              
               if (situation.view.enabled) then
                   shoulderTransitionTime = a.transitionTime
-              else
-                  if (a.zoomValue) then
-                      zoomValue = a.zoomValue;
-                  end  
               end
               
               local modelFactor = cosFix:CorrectShoulderOffset(value);
               if (modelFactor ~= -1) then
-                local correctedShoulderOffset = value * cosFix:GetShoulderOffsetZoomFactor(zoomValue) * modelFactor;
-                easeShoulderOffset(correctedShoulderOffset, shoulderTransitionTime);
+                -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
+                -- will take the current zoom level into account. Therefore, we must not
+                -- include it here!
+                cosFix.shoulderOffsetModelFactor = modelFactor;
+                easeShoulderOffset(value, shoulderTransitionTime);
               end
               ---------------------------------------------------------
               -- End of added cosFix code -----------------------------
@@ -848,15 +877,6 @@ if dynamicCamLoaded then
 
   local function ExitSituation(_, situationID, newSituationID)
 
-      ---------------------------------------------------------
-      -- Begin of added cosFix code ---------------------------
-      ---------------------------------------------------------
-      -- Set the flag here, lest some events destroy a smooth shoulder offset easing.
-      cosFix.easeShoulderOffsetInProgress = true;
-      ---------------------------------------------------------
-      -- End of added cosFix code ---------------------------
-      ---------------------------------------------------------
-
       local restoringZoom;
       local situation = DynamicCam.db.profile.situations[situationID];
       DynamicCam.currentSituationID = nil;
@@ -880,7 +900,7 @@ if dynamicCamLoaded then
 
       -- restore cvars to their default values
       DynamicCam:ApplyDefaultCameraSettings(newSituationID);
-      
+
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
       ---------------------------------------------------------
@@ -888,7 +908,7 @@ if dynamicCamLoaded then
       ---------------------------------------------------------
       -- End of added cosFix code -----------------------------
       ---------------------------------------------------------
-      
+
 
       -- restore view that is enabled
       if (situation.view.enabled and situation.view.restoreView) then
@@ -948,47 +968,61 @@ if dynamicCamLoaded then
 
       -- restore zoom level if we saved one
       if (DynamicCam:ShouldRestoreZoom(situationID, newSituationID)) then
+
           restoringZoom = true;
 
           local defaultTime = math_abs(restoration[situationID].zoom - GetCameraZoom()) / tonumber(GetCVar("cameraZoomSpeed"));
           local t = math_max(10.0/60.0, math_min(defaultTime, .75));
           local zoomLevel = restoration[situationID].zoom;
 
-          LibCamera:SetZoom(zoomLevel, t, LibEasing[DynamicCam.db.profile.easingZoom]);
-
 
           ---------------------------------------------------------
           -- Begin of added cosFix code ---------------------------
           ---------------------------------------------------------
+          -- CameraZoomIn and CameraZoomOut normally update the shoulder offset depending on
+          -- cosFix:getUserSetShoulderOffset(). But here we want easeShoulderOffset() to make
+          -- the transition gradually. Therefore, we have to set the easeShoulderOffsetInProgress flag.
+          cosFix.easeShoulderOffsetInProgress = true;
+          LibCamera:SetZoom(zoomLevel, t, LibEasing[DynamicCam.db.profile.easingZoom],
+            function() cosFix.easeShoulderOffsetInProgress = false end );
+
 
           -- Must get shoulder offset of newSituationID if any!
           local userSetShoulderOffset = cosFix:getUserSetShoulderOffset(newSituationID);
-          
+
           local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset);
           if (modelFactor ~= -1) then
-              local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(zoomLevel) * modelFactor;
-              easeShoulderOffset(correctedShoulderOffset, t, LibEasing[DynamicCam.db.profile.easingZoom]);
-              DynamicCam:DebugPrint("Restoring zoom level:", zoomLevel, " and shoulder offset:", correctedShoulderOffset, " with duration:", t);
+              -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
+              -- will take the current zoom level into account. Therefore, we must not
+              -- include it here!
+              cosFix.shoulderOffsetModelFactor = modelFactor;
+              easeShoulderOffset(userSetShoulderOffset, t, LibEasing[DynamicCam.db.profile.easingZoom]);
+
+              DynamicCam:DebugPrint("Restoring zoom level:", zoomLevel, " and shoulder offset:", userSetShoulderOffset, " with duration:", t);
           end
       else
-          
+
           -- Restore only test_cameraOverShoulder, because we skipped it by passing
           -- exitingSituationFlag=true to ApplyDefaultCameraSettings() above.
-          
+
           -- But only restore test_cameraOverShoulder, if newSituationID has no shoulder offset.
-          if (not newSituationID) or 
+          if (not newSituationID) or
              (not DynamicCam.db.profile.situations[newSituationID]) or
              (not DynamicCam.db.profile.situations[newSituationID].cameraCVars) or
              (not DynamicCam.db.profile.situations[newSituationID].cameraCVars.test_cameraOverShoulder) then
-          
+
             -- Must get shoulder offset of newSituationID if any!
             local userSetShoulderOffset = cosFix:getUserSetShoulderOffset(newSituationID);
 
             local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset);
             if (modelFactor ~= -1) then
-                local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * modelFactor;
-                easeShoulderOffset(correctedShoulderOffset, 0.75);
-                DynamicCam:DebugPrint("Not restoring zoom level but shoulder offset: " .. correctedShoulderOffset);
+                -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
+                -- will take the current zoom level into account. Therefore, we must not
+                -- include it here!
+                cosFix.shoulderOffsetModelFactor = modelFactor;
+                easeShoulderOffset(userSetShoulderOffset, 0.75);
+                
+                DynamicCam:DebugPrint("Not restoring zoom level but shoulder offset: " .. userSetShoulderOffset);
             end
 
           end
@@ -1205,8 +1239,11 @@ if dynamicCamLoaded then
                   if (not cosFix.exitingSituationFlag) then
                       local modelFactor = cosFix:CorrectShoulderOffset(value);
                       if (modelFactor ~= -1) then
-                        local correctedShoulderOffset = value * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * modelFactor;
-                          easeShoulderOffset(correctedShoulderOffset, 0.75);
+                          -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
+                          -- will take the current zoom level into account. Therefore, we must not
+                          -- include it here!
+                          cosFix.shoulderOffsetModelFactor = modelFactor;
+                          easeShoulderOffset(value, 0.75);
                       end
                   end
                   ---------------------------------------------------------
@@ -1238,6 +1275,7 @@ if dynamicCamLoaded then
 
       -- only restore zoom if returning to the same situation
       if (restoration[oldSituationID].zoomSituation ~= newSituationID) then
+          -- TODO (Ludius): But I want to return to the zoom I had when I was last in that situation...
           return false;
       end
 
@@ -1358,29 +1396,34 @@ if dynamicCamLoaded then
           -- Begin of added cosFix code ---------------------------
           ---------------------------------------------------------
           -- Correct the shoulder offset according to zoom level.
-          
-          -- While shoulder offset easing is in progress
-          -- we do not want zooming to set the target value too early.
-          if not cosFix.easeShoulderOffsetInProgress then
-          
-              local userSetShoulderOffset = cosFix:getUserSetShoulderOffset();
-              local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset);
 
-              -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
-              if (modelFactor == -1) then
-                  modelFactor = 1;
-              end
 
-              local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor;
-              easeShoulderOffset(correctedShoulderOffset, zoomTime, LibEasing[easingFunc]);
+          local userSetShoulderOffset = cosFix:getUserSetShoulderOffset();
+          local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset);
 
+          -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
+          if (modelFactor == -1) then
+              modelFactor = 1;
           end
+
+
+          -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
+          -- will take the current zoom level into account. Therefore, we must not
+          -- include it here!
+          cosFix.shoulderOffsetModelFactor = modelFactor;
+          easeShoulderOffset(userSetShoulderOffset, zoomTime, LibEasing[easingFunc]);
+
+          -- CameraZoomIn and CameraZoomOut normally update the shoulder offset depending on
+          -- cosFix:getUserSetShoulderOffset(). But here we want easeShoulderOffset() to make
+          -- the transition gradually. Therefore, we have to set the easeShoulderOffsetInProgress flag.
+          cosFix.easeShoulderOffsetInProgress = true;
+          LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc],
+            function() clearTargetZoom() cosFix.easeShoulderOffsetInProgress = false end );
           ---------------------------------------------------------
           -- End of added cosFix code -----------------------------
           ---------------------------------------------------------
 
 
-          LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc], clearTargetZoom);
       else
           if (zoomIn) then
               oldCameraZoomIn(increments, automated);
@@ -1771,18 +1814,17 @@ if dynamicCamLoaded then
   -- or the one of the current situation
   -- or the one of the new situation we are about to enter.
   function cosFix:getUserSetShoulderOffset(newSituationID)
-  
+
       local curSituation = DynamicCam.db.profile.situations[DynamicCam.currentSituationID];
 
       if (newSituationID) then
           curSituation = DynamicCam.db.profile.situations[newSituationID];
       end
-  
-  
+
       if curSituation and curSituation.cameraCVars.test_cameraOverShoulder then
           return curSituation.cameraCVars.test_cameraOverShoulder
       end
-    
+
       return DynamicCam.db.profile.defaultCvars.test_cameraOverShoulder
   end
 

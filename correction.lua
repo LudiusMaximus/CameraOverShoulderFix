@@ -130,7 +130,7 @@ function cosFix:SetLastModelId()
 
       self.db.char.lastModelId = modelId
 
-      
+      self.shoulderOffsetModelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
       -- Set the shoulder offset again!
       if not cosFix.easeShoulderOffsetInProgress then
@@ -139,11 +139,13 @@ function cosFix:SetLastModelId()
         if dynamicCamLoaded then
           userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
         end
+        
         local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
         local modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
         local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
         CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+
       end
       
     end
