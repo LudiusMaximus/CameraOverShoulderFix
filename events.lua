@@ -194,6 +194,8 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
     
     -- While shoulder offset easing is in progress
     -- we do not want an event to set the target value too early.
+    -- Instead we just update the shoulderOffsetModelFactor which is taken
+    -- into account by the easing functions.
     -- (Calling setShoulderOffset() again should not be necessary during easing.)
     if self.easeShoulderOffsetInProgress then
       

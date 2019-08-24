@@ -21,8 +21,15 @@ local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
 
 
 -- While shoulder offset easing is in progress
--- we do not want an event to set the target value too early.
+-- we do not want an event to set the new
+-- value of test_cameraOverShoulder too early, which
+-- we actually want to gradually ease to.
 cosFix.easeShoulderOffsetInProgress = false
+
+-- Similarly, when a situation change is in progress
+-- we do not want the CosFix_CameraZoom functions
+-- to set the new value of test_cameraOverShoulder too early.
+cosFix.situationChangeZoomInProgress = false
 
 
 local runhook = true
@@ -49,16 +56,21 @@ end
 
 
 -- Store original camera zoom functions.
+-- If DynamicCam has reative zoom enabled, these have already been
+-- overridden, we will get the real original functions below by
+-- temporarily deactivating reactive zoom.
 local CosFix_OriginalCameraZoomIn = CameraZoomIn
 local CosFix_OriginalCameraZoomOut = CameraZoomOut
 
--- These might already have been changed to reactive zoom by DynamicCam.
 if dynamicCamLoaded then
+  -- Deactivate reactive zoom to restore original CameraZoomIn and CameraZoomOut.
   DynamicCam:ReactiveZoomOff()
 
+  -- Store the original CameraZoomIn and CameraZoomOut.
   CosFix_OriginalCameraZoomIn = CameraZoomIn
   CosFix_OriginalCameraZoomOut = CameraZoomOut
 
+  -- Reactivate reactive zoom if necessary.
   if DynamicCam.db.profile.reactiveZoom.enabled then
     DynamicCam:ReactiveZoomOn()
   end
@@ -70,11 +82,12 @@ end
 local targetZoom;
 function CosFix_CameraZoomIn(...)
 
-  -- While shoulder offset easing is in progress
-  -- we do not want zooming to set the target value too early.
-  -- The shoulder offset easing will always take the current zoom into account!
-  if not cosFix.easeShoulderOffsetInProgress then
-  
+  -- While shoulder offset easing is in progress we do not want zooming
+  -- to set the target value too early.
+  -- The same goes for the automatic zoom changes of situation changes.
+  -- The shoulder offset easing will always take the current zoom (GetCameraZoom()) into account!
+  if not cosFix.easeShoulderOffsetInProgress and not cosFix.situationChangeZoomInProgress then
+
     local increments = ...
 
     local targetZoom = math.max(0, GetCameraZoom() - increments)
@@ -94,17 +107,18 @@ function CosFix_CameraZoomIn(...)
     local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
     CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
   end
-  
+
   return CosFix_OriginalCameraZoomIn(...)
 end
 
 
 function CosFix_CameraZoomOut(...)
 
-  -- While shoulder offset easing is in progress
-  -- we do not want zooming to set the target value too early.
-  -- The shoulder offset easing will always take the current zoom into account!
-  if not cosFix.easeShoulderOffsetInProgress then
+  -- While shoulder offset easing is in progress we do not want zooming
+  -- to set the target value too early.
+  -- The same goes for the automatic zoom changes of situation changes.
+  -- The shoulder offset easing will always take the current zoom (GetCameraZoom()) into account!
+  if not cosFix.easeShoulderOffsetInProgress and not cosFix.situationChangeZoomInProgress then
 
     local increments = ...
 

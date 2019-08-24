@@ -251,7 +251,8 @@ if IsAddOnLoaded("DynamicCam") then
 
       DynamicCam:DebugPrint("test_cameraOverShoulder", oldOffest, "->", endValue);
 
-      ---------------------------------------------------------
+
+      -------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
       ---------------------------------------------------------
 
@@ -793,15 +794,16 @@ if IsAddOnLoaded("DynamicCam") then
 
               DynamicCam:DebugPrint("Setting zoom level because of situation entrance", newZoomLevel, duration);
 
+
               ---------------------------------------------------------
               -- Begin of added cosFix code ---------------------------
               ---------------------------------------------------------
-              -- CameraZoomIn and CameraZoomOut normally update the shoulder offset depending on
+              -- CameraZoomIn and CameraZoomOut normally update test_cameraDynamicPitch offset depending on
               -- cosFix:getUserSetShoulderOffset(). But here we want easeShoulderOffset() to make
-              -- the transition gradually. Therefore, we have to set the easeShoulderOffsetInProgress flag.
-              cosFix.easeShoulderOffsetInProgress = true;
+              -- the transition gradually. Therefore, we have to set the situationChangeZoomInProgress flag.
+              cosFix.situationChangeZoomInProgress = true;
               LibCamera:SetZoom(newZoomLevel, duration, LibEasing[DynamicCam.db.profile.easingZoom],
-                function() cosFix.easeShoulderOffsetInProgress = false end );
+                function() cosFix.situationChangeZoomInProgress = false end );
               ---------------------------------------------------------
               -- End of added cosFix code -----------------------------
               ---------------------------------------------------------
@@ -829,17 +831,18 @@ if IsAddOnLoaded("DynamicCam") then
               -- but ease test_cameraOverShoulder with the same user set
               -- transition time (ideally as fast as the changing of the view).
               local shoulderTransitionTime = transitionTime
-              if (situation.view.enabled) then
+              if situation.view.enabled then
                   shoulderTransitionTime = a.transitionTime
               end
-              
-              local modelFactor = cosFix:CorrectShoulderOffset(value);
-              if (modelFactor ~= -1) then
-                -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
-                -- will take the current zoom level into account. Therefore, we must not
-                -- include it here!
-                cosFix.shoulderOffsetModelFactor = modelFactor;
-                easeShoulderOffset(value, shoulderTransitionTime);
+
+              local modelFactor = cosFix:CorrectShoulderOffset(value)
+              if modelFactor ~= -1 then
+                  -- setShoulderOffset() -- called repetitively by easeShoulderOffset() --
+                  -- will take the current zoom level into account. Therefore, we must not
+                  -- include it here!
+                  cosFix.shoulderOffsetModelFactor = modelFactor
+
+                  easeShoulderOffset(value, shoulderTransitionTime)
               end
               ---------------------------------------------------------
               -- End of added cosFix code -----------------------------
@@ -979,13 +982,12 @@ if IsAddOnLoaded("DynamicCam") then
           ---------------------------------------------------------
           -- Begin of added cosFix code ---------------------------
           ---------------------------------------------------------
-          -- CameraZoomIn and CameraZoomOut normally update the shoulder offset depending on
+          -- CameraZoomIn and CameraZoomOut normally update test_cameraDynamicPitch offset depending on
           -- cosFix:getUserSetShoulderOffset(). But here we want easeShoulderOffset() to make
-          -- the transition gradually. Therefore, we have to set the easeShoulderOffsetInProgress flag.
-          cosFix.easeShoulderOffsetInProgress = true;
+          -- the transition gradually. Therefore, we have to set the situationChangeZoomInProgress flag.
+          cosFix.situationChangeZoomInProgress = true;
           LibCamera:SetZoom(zoomLevel, t, LibEasing[DynamicCam.db.profile.easingZoom],
-            function() cosFix.easeShoulderOffsetInProgress = false end );
-
+            function() cosFix.situationChangeZoomInProgress = false end );
 
           -- Must get shoulder offset of newSituationID if any!
           local userSetShoulderOffset = cosFix:getUserSetShoulderOffset(newSituationID);
@@ -1021,7 +1023,7 @@ if IsAddOnLoaded("DynamicCam") then
                 -- include it here!
                 cosFix.shoulderOffsetModelFactor = modelFactor;
                 easeShoulderOffset(userSetShoulderOffset, 0.75);
-                
+
                 DynamicCam:DebugPrint("Not restoring zoom level but shoulder offset: " .. userSetShoulderOffset);
             end
 
@@ -1413,16 +1415,11 @@ if IsAddOnLoaded("DynamicCam") then
           cosFix.shoulderOffsetModelFactor = modelFactor;
           easeShoulderOffset(userSetShoulderOffset, zoomTime, LibEasing[easingFunc]);
 
-          -- CameraZoomIn and CameraZoomOut normally update the shoulder offset depending on
-          -- cosFix:getUserSetShoulderOffset(). But here we want easeShoulderOffset() to make
-          -- the transition gradually. Therefore, we have to set the easeShoulderOffsetInProgress flag.
-          cosFix.easeShoulderOffsetInProgress = true;
-          LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc],
-            function() clearTargetZoom() cosFix.easeShoulderOffsetInProgress = false end );
           ---------------------------------------------------------
           -- End of added cosFix code -----------------------------
           ---------------------------------------------------------
 
+          LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc]);
 
       else
           if (zoomIn) then
