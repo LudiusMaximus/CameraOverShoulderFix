@@ -72,8 +72,8 @@ end
 function cosFix:GetCurrentModelId()
   -- print("GetCurrentModelId()")
 
-  cosFix.modelFrame:SetUnit("player")
-  local modelId = cosFix.modelFrame:GetModelFileID()
+  self.modelFrame:SetUnit("player")
+  local modelId = self.modelFrame:GetModelFileID()
 
   if modelId == nil then
 
@@ -109,8 +109,8 @@ cosFix.lastModelIdTimerId = nil
 function cosFix:SetLastModelId()
   -- print("SetLastModelId()")
 
-  cosFix.modelFrame:SetUnit("player")
-  local modelId = cosFix.modelFrame:GetModelFileID()
+  self.modelFrame:SetUnit("player")
+  local modelId = self.modelFrame:GetModelFileID()
   -- print(modelId)
 
   if modelId == nil then
@@ -133,13 +133,13 @@ function cosFix:SetLastModelId()
       self.shoulderOffsetModelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
       -- Set the shoulder offset again!
-      if not cosFix.easeShoulderOffsetInProgress then
-      
-        local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+      if self.easeShoulderOffsetInProgressReactiveZoom[1] == false and self.easeShoulderOffsetInProgressSituationChange[1] == false then
+
+        local userSetShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
         if dynamicCamLoaded then
-          userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+          userSetShoulderOffset = self:GetUserSetShoulderOffset()
         end
-        
+
         local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
         local modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
@@ -147,7 +147,7 @@ function cosFix:SetLastModelId()
         CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
       end
-      
+
     end
   end
 end
@@ -162,7 +162,7 @@ function cosFix:GetOppositeLastWorgenModelId()
     return self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
 
   elseif self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil then
-    cosFix:DebugPrint("SHOULD NEVER HAPPEN!")
+    self:DebugPrint("SHOULD NEVER HAPPEN!")
     return self.modelIdToShoulderOffsetFactor[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]]
 
   -- Normal case.
@@ -195,8 +195,8 @@ end
 function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
 
-  -- cosFix.modelFrame:SetUnit("player")
-  -- local modelId = cosFix.modelFrame:GetModelFileID()
+  -- self.modelFrame:SetUnit("player")
+  -- local modelId = self.modelFrame:GetModelFileID()
   -- print("Current modelId", modelId)
 
 
@@ -242,9 +242,9 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     else
       local vehicleName = GetUnitName("vehicle", false)
       if vehicleName == nil then
-        cosFix:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". Zoom in or out to get message including vehicle name!")
+        self:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". Zoom in or out to get message including vehicle name!")
       else
-        cosFix:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known...")
+        self:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known...")
       end
 
       -- Default for all unknown vehicles...
@@ -319,7 +319,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
               returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
             else
               local creatureName = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
-              cosFix:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known...")
+              self:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known...")
               -- Default for all other mounts...
               returnValue = mountedFactor * 6
             end
@@ -333,7 +333,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
         else
           local creatureName = C_MountJournal_GetMountInfoByID(mountId)
-          cosFix:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known...")
+          self:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known...")
           -- Default for all other mounts...
           returnValue = mountedFactor * 6
         end
@@ -373,15 +373,15 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           if self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId] then
             returnValue = self.druidFormIdToShoulderOffsetFactor[raceFile][genderCode][formId]
           else
-            cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factor for form id " .. formId .. " not yet known...")
+            self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factor for form id " .. formId .. " not yet known...")
             returnValue = 1
           end
         else
-          cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factors not yet known...")
+          self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " druid form factors not yet known...")
           returnValue = 1
         end
       else
-        cosFix:DebugPrint(raceFile .. " druid form factors not yet known...")
+        self:DebugPrint(raceFile .. " druid form factors not yet known...")
         returnValue = 1
       end
 
@@ -390,7 +390,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
       returnValue = self.shamanGhostwolfToShoulderOffsetFactor[formId]
 
     else
-      cosFix:DebugPrint("Shapeshift form '" .. formId .. "' not yet known...")
+      self:DebugPrint("Shapeshift form '" .. formId .. "' not yet known...")
 
     end
 
@@ -415,7 +415,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"] then
             returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
           else
-            cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Havoc' not yet known...")
+            self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Havoc' not yet known...")
             returnValue = 1
           end
 
@@ -427,7 +427,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"] then
             returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]
           else
-            cosFix:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Vengeance' not yet known...")
+            self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for of 'Vengeance' not yet known...")
             returnValue = 1
           end
 
@@ -452,14 +452,14 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
         -- Check in a list of "known unknowns" (e.g. shapeshift forms) to suppress the debug output in case.
         if self.knownUnknownModelId[modelId] == nil then
-          cosFix:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
+          self:DebugPrint("Model ID " .. modelId .. " not in modelIdToShoulderOffsetFactor...")
         end
 
         -- If it exists, use the last known normal model.
         if self.db.char.lastModelId then
 
           if self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId] == nil then
-            cosFix:DebugPrint("SHOULD NEVER HAPPEN!")
+            self:DebugPrint("SHOULD NEVER HAPPEN!")
             returnValue = -1
           else
             returnValue = self.modelIdToShoulderOffsetFactor[self.db.char.lastModelId]

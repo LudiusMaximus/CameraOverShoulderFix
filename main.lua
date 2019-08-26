@@ -20,17 +20,6 @@ local DynamicCam = _G.DynamicCam
 local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
 
 
--- While shoulder offset easing is in progress
--- we do not want an event to set the new
--- value of test_cameraOverShoulder too early, which
--- we actually want to gradually ease to.
-cosFix.easeShoulderOffsetInProgress = false
-
--- Similarly, when a situation change is in progress
--- we do not want the CosFix_CameraZoom functions
--- to set the new value of test_cameraOverShoulder too early.
-cosFix.situationChangeZoomInProgress = false
-
 
 local runhook = true
 local function CosFixSetCVar(...)
@@ -80,67 +69,58 @@ end
 
 -- Hooking functions for non-reactive zoom.
 local targetZoom;
-function CosFix_CameraZoomIn(...)
+function CosFix_CameraZoomIn(increments, automated)
 
-  -- While shoulder offset easing is in progress we do not want zooming
-  -- to set the target value too early.
-  -- The same goes for the automatic zoom changes of situation changes.
-  -- The shoulder offset easing will always take the current zoom (GetCameraZoom()) into account!
-  if not cosFix.easeShoulderOffsetInProgress and not cosFix.situationChangeZoomInProgress then
+  -- No idea, why WoW does in-out-in-out with increments 0
+  -- after each mouse wheel turn.
+  if increments == 0 then return end
 
-    local increments = ...
+  local targetZoom = math.max(0, GetCameraZoom() - increments)
 
-    local targetZoom = math.max(0, GetCameraZoom() - increments)
-
-    local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
-    if dynamicCamLoaded then
-      userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
-    end
-
-    local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
-
-    -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
-    if modelFactor == -1 then
-      modelFactor = 1
-    end
-
-    local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
-    CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+  if dynamicCamLoaded then
+    userSetShoulderOffset = cosFix.currentShoulderOffset
   end
 
-  return CosFix_OriginalCameraZoomIn(...)
+  local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
+
+  -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
+  if modelFactor == -1 then
+    modelFactor = 1
+  end
+
+  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
+  CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+
+
+  return CosFix_OriginalCameraZoomIn(increments, automated)
 end
 
 
-function CosFix_CameraZoomOut(...)
+function CosFix_CameraZoomOut(increments, automated)
 
-  -- While shoulder offset easing is in progress we do not want zooming
-  -- to set the target value too early.
-  -- The same goes for the automatic zoom changes of situation changes.
-  -- The shoulder offset easing will always take the current zoom (GetCameraZoom()) into account!
-  if not cosFix.easeShoulderOffsetInProgress and not cosFix.situationChangeZoomInProgress then
+  -- No idea, why WoW does in-out-in-out with increments 0
+  -- after each mouse wheel turn.
+  if increments == 0 then return end
 
-    local increments = ...
+  targetZoom = math.min(39, GetCameraZoom() + increments)
 
-    targetZoom = math.min(39, GetCameraZoom() + increments)
-
-    local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
-    if dynamicCamLoaded then
-      userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
-    end
-
-    local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
-
-    -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
-    if modelFactor == -1 then
-      modelFactor = 1
-    end
-
-    local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
-    CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+  if dynamicCamLoaded then
+    userSetShoulderOffset = cosFix.currentShoulderOffset
   end
 
-  return CosFix_OriginalCameraZoomOut(...)
+  local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
+
+  -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
+  if modelFactor == -1 then
+    modelFactor = 1
+  end
+
+  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
+  CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+
+  return CosFix_OriginalCameraZoomOut(increments, automated)
 end
 
 
@@ -207,6 +187,9 @@ function cosFix:OnEnable()
   -- Otherwise, the value for test_cameraOverShoulder might not be applied.
   if not dynamicCamLoaded then
     self:ScheduleTimer("SetVariables", 0.1)
+
+    self.currentShoulderOffset = self:GetUserSetShoulderOffset()
+    self.shoulderOffsetModelFactor = self:CorrectShoulderOffset(self.currentShoulderOffset)
   end
 
 end
@@ -227,7 +210,7 @@ function cosFix:OnDisable()
 
   -- Restore all test variables and enable the Blizzard warning.
   ResetTestCvars();
-  UIParent:RegisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED");
+  UIParent:RegisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
 
 end
 

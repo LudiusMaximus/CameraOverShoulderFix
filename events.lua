@@ -191,28 +191,28 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
 
 
   if dynamicCamLoaded then
-    
+
     -- While shoulder offset easing is in progress
     -- we do not want an event to set the target value too early.
     -- Instead we just update the shoulderOffsetModelFactor which is taken
     -- into account by the easing functions.
     -- (Calling setShoulderOffset() again should not be necessary during easing.)
-    if self.easeShoulderOffsetInProgress then
-      
+    if self.easeShoulderOffsetInProgressReactiveZoom[1] == true or self.easeShoulderOffsetInProgressSituationChange[1] == true then
+
       if delay == 0 then
         self.shoulderOffsetModelFactor = modelFactor
         return
       else
         return cosFix_wait(delay, function() self.shoulderOffsetModelFactor = modelFactor end)
       end
-    
+
     else
       self.shoulderOffsetModelFactor = modelFactor
     end
-    
+
   end
-  
-  
+
+
 
   local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
 
@@ -233,16 +233,16 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
   -- print("##########################")
   -- print("ShoulderOffsetEventHandler got event:", event, ...)
-  
+
   -- If both shoulder offset adjustments are disabled, do nothing!
   if not self.db.profile.modelIndependentShoulderOffset and not self.db.profile.shoulderOffsetZoom then
     return
   end
-  
 
-  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+
+  local userSetShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
   if dynamicCamLoaded then
-    userSetShoulderOffset = cosFix:getUserSetShoulderOffset()
+    userSetShoulderOffset = self:GetUserSetShoulderOffset()
   end
 
   local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
@@ -310,7 +310,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
           -- Call with pre-determined modelFactor to avoid recalculation.
           return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.06, modelFactor)
-          
+
         else
           -- print("Changing into Worgen.")
 
@@ -360,8 +360,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
       -- Try to determine the current form.
-      cosFix.modelFrame:SetUnit("player")
-      local modelId = cosFix.modelFrame:GetModelFileID()
+      self.modelFrame:SetUnit("player")
+      local modelId = self.modelFrame:GetModelFileID()
 
       -- print("UNIT_MODEL_CHANGED thinks you are", modelId, "while lastModelId is", self.db.char.lastModelId)
 
@@ -756,7 +756,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     end
 
     local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset, vehicleGuid)
-    
+
     -- Call with pre-determined modelFactor to avoid recalculation.
     return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0, modelFactor)
 
