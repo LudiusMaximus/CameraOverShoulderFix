@@ -275,14 +275,13 @@ if IsAddOnLoaded("DynamicCam") then
   local function easeShoulderOffset(endValue, duration, easingFunc, inProgressFlag)
       stopEasingShoulderOffset();
 
-      local oldOffest = tonumber(GetCVar("test_cameraOverShoulder"));
+      ---------------------------------------------------------
+      -- Begin of added cosFix code ---------------------------
+      ---------------------------------------------------------
+      local oldOffest = cosFix.currentShoulderOffset
 
       DynamicCam:DebugPrint("test_cameraOverShoulder", oldOffest, "->", endValue);
 
-
-      -------------------------------------------------------
-      -- Begin of added cosFix code ---------------------------
-      ---------------------------------------------------------
       if oldOffest == endValue then return end
 
       -- setShoulderOffset does the correction at any call.
@@ -297,8 +296,7 @@ if IsAddOnLoaded("DynamicCam") then
 
       -- Store that we are currently easing,
       -- such that no triggered event will set the shoulder offset prematurely.
-      -- The events just set cosFix.shoulderOffsetModelFactor to new value.
-      -- (Calling setShoulderOffset() again should not be necessary during easing.)
+      -- The events just set cosFix.shoulderOffsetModelFactor to the new value.
       inProgressFlag[1] = true
       easeShoulderOffsetHandle = LibEasing:Ease(setShoulderOffset, oldOffest, endValue, duration, easingFunc,
         function() inProgressFlag[1] = false end );

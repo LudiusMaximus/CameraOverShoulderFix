@@ -196,12 +196,13 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
     -- we do not want an event to set the target value too early.
     -- Instead we just update the shoulderOffsetModelFactor which is taken
     -- into account by the easing functions.
-    -- (Calling setShoulderOffset() again should not be necessary during easing.)
     if self.easeShoulderOffsetInProgressReactiveZoom[1] == true or self.easeShoulderOffsetInProgressSituationChange[1] == true then
 
       if delay == 0 then
         self.shoulderOffsetModelFactor = modelFactor
-        return
+        -- For delay == 0 we have to set the value here as well, because the next
+        -- setShoulderOffset() call of the easing might be too late.
+        return CosFix_OriginalSetCVar("test_cameraOverShoulder", cosFix.currentShoulderOffset * shoulderOffsetZoomFactor * modelFactor)
       else
         return cosFix_wait(delay, function() self.shoulderOffsetModelFactor = modelFactor end)
       end
