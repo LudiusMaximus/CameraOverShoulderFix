@@ -749,6 +749,17 @@ if IsAddOnLoaded("DynamicCam") then
 
   local function EnterSituation(_, situationID, oldSituationID, skipZoom)
 
+      ---------------------------------------------------------
+      -- Begin of added cosFix code ---------------------------
+      ---------------------------------------------------------
+      -- Necessary if you are entering a situation without zoom but with a view,
+      -- and the zoom easing of a previous situation change is still in progress.
+      -- E.g. stop NPC interacation and start it again right away.
+      LibCamera:StopZooming();
+      ---------------------------------------------------------
+      -- End of added cosFix code -----------------------------
+      ---------------------------------------------------------
+
       local situation = DynamicCam.db.profile.situations[situationID];
       local this = situationEnvironments[situationID].this;
 
@@ -1136,6 +1147,17 @@ if IsAddOnLoaded("DynamicCam") then
       if (situation and (situationID == DynamicCam.currentSituationID)) then
           -- apply cvars
           for cvar, value in pairs(situation.cameraCVars) do
+
+              ---------------------------------------------------------
+              -- Begin of added cosFix code ---------------------------
+              ---------------------------------------------------------
+              if (cvar == "test_cameraOverShoulder") then
+                  cosFix.currentShoulderOffset = value
+              end
+              ---------------------------------------------------------
+              -- End of added cosFix code -----------------------------
+              ---------------------------------------------------------
+
               DC_SetCVar(cvar, value);
           end
           DynamicCam:ApplyDefaultCameraSettings();
