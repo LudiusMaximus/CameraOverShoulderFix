@@ -858,12 +858,16 @@ if IsAddOnLoaded("DynamicCam") then
 
               -- When we are entering a view, there is no additional zoom for
               -- the situation. We also want to ignore the transition time
-              -- but ease test_cameraOverShoulder with the same user set
-              -- transition time (ideally as fast as the changing of the view).
-              local shoulderTransitionTime = transitionTime
-              if situation.view.enabled then
-                  shoulderTransitionTime = a.transitionTime
+              -- but ease test_cameraOverShoulder as fast at the view change.
+              -- 0.5 seems to be good for that.
+              local shoulderTransitionTime = nil
+              local oldSituation = DynamicCam.db.profile.situations[oldSituationID]
+              if situation.view.enabled or (oldSituation and oldSituation.view.enabled and oldSituation.view.restoreView) then
+                  shoulderTransitionTime = 0.5
+              else
+                shoulderTransitionTime = transitionTime
               end
+
 
               local modelFactor = cosFix:CorrectShoulderOffset(value)
               if modelFactor ~= -1 then
@@ -944,6 +948,15 @@ if IsAddOnLoaded("DynamicCam") then
       -- restore view that is enabled
       if (situation.view.enabled and situation.view.restoreView) then
           gotoView(1, situation.view.instant);
+          ---------------------------------------------------------
+          -- Begin of added cosFix code ---------------------------
+          ---------------------------------------------------------
+          -- If we restore the view, we do not want the new situation
+          -- to put a different zoom on top.
+          restoringZoom = true
+          ---------------------------------------------------------
+          -- End of added cosFix code -----------------------------
+          ---------------------------------------------------------
       end
 
       local a = situation.cameraActions;
@@ -1020,6 +1033,12 @@ if IsAddOnLoaded("DynamicCam") then
           if (modelFactor ~= -1) then
               -- This is only necessary because the modelFactor for mounts depends on userSetShoulderOffset.
               cosFix.shoulderOffsetModelFactor = modelFactor;
+              
+              -- If we are resetting a view, we want the shoulder offset change to be as fast as the view change!
+              if (situation.view.enabled and situation.view.restoreView) then
+                  t = 0.5
+              end
+              
               easeShoulderOffset(userSetShoulderOffset, t, LibEasing[DynamicCam.db.profile.easingZoom], cosFix.easeShoulderOffsetInProgressSituationChange);
 
               DynamicCam:DebugPrint("Restoring zoom level:", zoomLevel, " and shoulder offset:", userSetShoulderOffset, " with duration:", t);
@@ -1042,7 +1061,14 @@ if IsAddOnLoaded("DynamicCam") then
             if (modelFactor ~= -1) then
                 -- This is only necessary because the modelFactor for mounts depends on userSetShoulderOffset.
                 cosFix.shoulderOffsetModelFactor = modelFactor;
-                easeShoulderOffset(userSetShoulderOffset, 0.75, nil, cosFix.easeShoulderOffsetInProgressSituationChange);
+                
+                -- Actually no idea, why DynamicCam uses 0.75 here as a default...
+                local t = 0.75
+                -- If we are setting a view, we want the shoulder offset change to be as fast as the view change!
+                if (situation.view.enabled and situation.view.restoreView) then
+                    t = 0.5
+                end
+                easeShoulderOffset(userSetShoulderOffset, t, nil, cosFix.easeShoulderOffsetInProgressSituationChange);
 
                 DynamicCam:DebugPrint("Not restoring zoom level but shoulder offset: " .. userSetShoulderOffset);
             end
@@ -1303,6 +1329,7 @@ if IsAddOnLoaded("DynamicCam") then
           DynamicCam:DebugPrint("Restoring because just exiting");
           return true;
       end
+
 
       -- only restore zoom if returning to the same situation
       if (restoration[oldSituationID].zoomSituation ~= newSituationID) then
