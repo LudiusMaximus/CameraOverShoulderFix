@@ -297,13 +297,13 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             end
 
             specialBuffActive = true
-            break
+
 
           elseif spellId == 40212 then
             -- print("Dragonmaw Nether Drake")
             returnValue = mountedFactor * 2.5
             specialBuffActive = true
-            break
+
           end
         end
 
@@ -420,7 +420,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           end
 
           metamorphosis = true
-          break
+
 
         elseif spellId == 187827 then
           -- print("Demon Hunter Metamorphosis Vengeance")
@@ -432,7 +432,6 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           end
 
           metamorphosis = true
-          break
 
         end
       end

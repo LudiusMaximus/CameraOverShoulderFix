@@ -46,7 +46,7 @@ SlashCmdList["MYTRACE"] = function(msg)
     TFrame.Text:SetSize(180, 170)
     TFrame.Text:SetPoint("TOPLEFT", TFrame.SF)
     TFrame.Text:SetPoint("BOTTOMRIGHT", TFrame.SF)
-    TFrame.Text:SetMaxLetters(99999)
+    TFrame.Text:SetMaxLetters(999999)
     TFrame.Text:SetFontObject(GameFontNormal)
     TFrame.Text:SetAutoFocus(false)
     TFrame.Text:SetScript("OnEscapePressed", function(self)self:ClearFocus() end)
@@ -64,7 +64,11 @@ SlashCmdList["MYTRACE"] = function(msg)
       local t = self:GetParent().Text
       local text = ""
       for i=1, #EventTraceFrame.events do
-          text = text.."\n"..EventTraceFrame.events[i]
+          if EventTraceFrame.events[i] then
+            text = text.."\n"..EventTraceFrame.events[i]
+          else
+            text = text.."\n---->Could not read event!<----"
+          end
       end
       t:SetText("")
       t:SetText(text)
@@ -171,7 +175,25 @@ cosFix.skipNextWorgenUnitModelChanged = 0
 
 
 
+-- For Demon Hunter Metamorphosis.
+cosFix.timeOfLastSpellsChanged = 0
 
+
+-- 0 normal, 1 havoc, 2 vengeance
+local function GetDemonHunterForm()
+
+  local returnValue = 0
+
+  for i = 1,40 do
+    local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
+    -- print(name, spellId)
+    if spellId == 162264 then returnValue = 1
+    elseif spellId == 187827 then returnValue = 2
+    end
+  end
+
+  return returnValue
+end
 
 
 -- Determine and set a the shoulder offset with or without a delay.
@@ -250,7 +272,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
 
-  -- Needed for Worgen form change and Demon Hunter Metamorphosis.
+  -- Needed for Worgen form change..
   if event == "UNIT_SPELLCAST_SUCCEEDED" then
     local unitName, _, spellId = ...
 
@@ -324,6 +346,26 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         end
       end
     end  -- (raceFile == "Worgen")
+
+
+    -- Attempt to get it better. But did not work!
+    -- local _, englishClass = UnitClass("player")
+    -- if englishClass == "DEMONHUNTER" then
+
+      -- if spellId == 198013 then
+        -- print("UNIT_SPELLCAST_SUCCEEDED for METAMORPHOSIS HAVOC")
+        -- self.lastSpellCastSentTime = GetTime()
+        
+        -- local _, raceFile = UnitRace("player")
+        -- local genderCode = UnitSex("player")
+        -- local factor = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
+
+        -- return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.64, factor)
+
+      -- end
+    -- end  -- (englishClass == "DEMONHUNTER")
+
+
 
 
   -- Needed for Worgen form change.
@@ -571,6 +613,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   -- Needed for changing into bear.
   elseif event == "UNIT_HEALTH_FREQUENT" then
     if self.activateNextHealthFrequent == true then
+
       -- print("Executing UNIT_HEALTH_FREQUENT")
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
@@ -579,9 +622,11 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     end
 
 
-  -- Needed for Druid shapeshift changes.
-  -- And special dismounting cases.
+  -- Needed for Druid shapeshift changes
+  -- and special dismounting cases.
+  -- TODO: Why are you not using UNIT_SPELLCAST_SUCCEEDED?
   elseif event == "UNIT_SPELLCAST_SENT" then
+
     local unitName, _, _, spellId = ...
 
     -- Only do something if UNIT_SPELLCAST_SENT is for "player".
@@ -608,6 +653,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     -- set the waitingForUnitAura make it look like we are still waiting when
     -- the player dismounts for any other reason.
     self:ScheduleTimer(function() self.waitingForUnitAura = false end, 0.1)
+
 
 
 
@@ -717,32 +763,39 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     local _, englishClass = UnitClass("player")
     if englishClass == "DEMONHUNTER" then
 
-      -- Changing into Metamorphosis form.
-      for i = 1,40 do
-        local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-        -- print(name, spellId)
+      if self.timeOfLastSpellsChanged == GetTime() then
 
-        if spellId == 162264 then
+        local demonHunterForm = GetDemonHunterForm()
+
+        if demonHunterForm == 1 then
           -- print("UNIT_AURA for METAMORPHOSIS HAVOC")
-          -- This is as good as it gets: sometimes left, sometimes right jerk...
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.68)
+          -- TODO: This is never right!!! :-(
+          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.654)
+        end
 
-        elseif spellId == 187827 then
+        if demonHunterForm == 2 then
           -- print("UNIT_AURA for METAMORPHOSIS VENGEANCE")
           return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.966)
+        end
 
+        if demonHunterForm == 0 then
+          -- print("UNIT_AURA for DEMON HUNTER back to normal")
+          -- TODO: For a framerate of 30 or lower, this still gives a camera jerk!
+          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.082)
         end
 
       end
 
-      -- Changing into normal Demon Hunter form.
-      -- print("UNIT_AURA for DEMON HUNTER back to normal")
-      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.082)
-
-
     end  -- (englishClass == "DEMONHUNTER")
 
     -- print("... doing nothing!")
+
+
+  elseif event == "SPELLS_CHANGED" then
+
+
+    self.timeOfLastSpellsChanged = GetTime()
+
 
 
   -- Needed for vehicles.
@@ -811,11 +864,14 @@ function cosFix:RegisterEvents()
 
   -- Needed for mounting and entering taxis.
   self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
-  self:RegisterEvent("COMPANION_UPDATE", "ShoulderOffsetEventHandler")
 
   -- Needed to determine the right time to change shoulder offset when dismounting,
   -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.
   self:RegisterEvent("UNIT_AURA", "ShoulderOffsetEventHandler")
+
+  -- For Demon Hunter Metamorphosis.
+  self:RegisterEvent("SPELLS_CHANGED", "ShoulderOffsetEventHandler")
+
 
   -- Needed for vehicles.
   self:RegisterEvent("UNIT_ENTERING_VEHICLE", "ShoulderOffsetEventHandler")
