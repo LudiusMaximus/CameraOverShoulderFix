@@ -10,7 +10,7 @@ local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "A
 local _G = _G
 local pairs = _G.pairs
 
-CosFix_OriginalSetCVar = _G.SetCVar
+_G.CosFix_OriginalSetCVar = _G.SetCVar
 local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
 
 local GetCameraZoom = _G.GetCameraZoom
@@ -188,7 +188,7 @@ function cosFix:OnEnable()
   if not dynamicCamLoaded then
     self:ScheduleTimer("SetVariables", 0.1)
 
-    self.currentShoulderOffset = self:GetUserSetShoulderOffset()
+    self.currentShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
     self.shoulderOffsetModelFactor = self:CorrectShoulderOffset(self.currentShoulderOffset)
   end
 
