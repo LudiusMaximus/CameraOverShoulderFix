@@ -448,7 +448,7 @@ if IsAddOnLoaded("DynamicCam") then
 
   local function restoreNameplates()
       if (not InCombatLockdown()) then
-          for k,v in pairs(nameplateRestore) do
+          for k, v in pairs(nameplateRestore) do
               SetCVar(k, v);
           end
           nameplateRestore = {};

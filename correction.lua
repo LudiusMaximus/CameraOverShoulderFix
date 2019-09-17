@@ -51,7 +51,7 @@ function cosFix:GetCurrentMount()
 
   -- This looks horribly ineffectice, but apparently there is no way of getting the
   -- currently active mount's id directly...
-  for k,v in pairs (C_MountJournal_GetMountIDs()) do
+  for k, v in pairs (C_MountJournal_GetMountIDs()) do
 
     local _, _, _, active = C_MountJournal_GetMountInfoByID(v)
 
@@ -277,7 +277,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
         -- Check for special buffs.
         local specialBuffActive = false
 
-        for i = 1,40 do
+        for i = 1, 40 do
           local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
           -- print (name, spellId)
 
@@ -297,13 +297,13 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
             end
 
             specialBuffActive = true
-
+            break
 
           elseif spellId == 40212 then
             -- print("Dragonmaw Nether Drake")
             returnValue = mountedFactor * 2.5
             specialBuffActive = true
-
+            break
           end
         end
 
@@ -407,7 +407,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
     -- Check for Demon Hunter Metamorphosis.
     local metamorphosis = false
     if englishClass == "DEMONHUNTER" then
-      for i = 1,40 do
+      for i = 1, 40 do
         local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
         -- print(name, spellId)
         if spellId == 162264 then
@@ -420,7 +420,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           end
 
           metamorphosis = true
-
+          break
 
         elseif spellId == 187827 then
           -- print("Demon Hunter Metamorphosis Vengeance")
@@ -432,6 +432,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
           end
 
           metamorphosis = true
+          break
 
         end
       end

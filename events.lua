@@ -31,16 +31,17 @@ local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
 local TFrame
 SLASH_MYTRACE1 = "/tt"
 SlashCmdList["MYTRACE"] = function(msg)
-  if not EventTraceFrame then print("ETRACE NOT OPEN") return end
   if not TFrame then
     TFrame = CreateFrame("Button", "FizzleEventList", UIParent)
     TFrame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile="Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, insets = {left = 8, right = 8, top = 8, bottom = 8},})
     TFrame:SetBackdropColor(0, 0, 0)
-    TFrame:SetPoint("RIGHT", -12)
+    TFrame:SetPoint("CENTER", 0)
     TFrame:SetSize(400, 400)
+    
     TFrame.SF = CreateFrame("ScrollFrame", "$parent_DF", TFrame, "UIPanelScrollFrameTemplate")
     TFrame.SF:SetPoint("TOPLEFT", TFrame, 12, -30)
     TFrame.SF:SetPoint("BOTTOMRIGHT", TFrame, -30, 10)
+    
     TFrame.Text = CreateFrame("EditBox", nil, TFrame)
     TFrame.Text:SetMultiLine(true)
     TFrame.Text:SetSize(180, 170)
@@ -51,29 +52,52 @@ SlashCmdList["MYTRACE"] = function(msg)
     TFrame.Text:SetAutoFocus(false)
     TFrame.Text:SetScript("OnEscapePressed", function(self)self:ClearFocus() end)
     TFrame.SF:SetScrollChild(TFrame.Text)
+    
     TFrame.Close = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
     TFrame.Close:SetSize(24, 24)
     TFrame.Close:SetPoint("TOPRIGHT", -8, -8)
     TFrame.Close:SetText("X")
     TFrame.Close:SetScript("OnClick", function(self) self:GetParent():Hide() end)
-    TFrame.Clear = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
-    TFrame.Clear:SetSize(24, 24)
-    TFrame.Clear:SetPoint("RIGHT", TFrame.Close, "LEFT", -1)
-    TFrame.Clear:SetText("R")
-    TFrame.Clear:SetScript("OnClick", function(self)
+    
+    TFrame.CopyET = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
+    TFrame.CopyET:SetSize(24, 24)
+    TFrame.CopyET:SetPoint("RIGHT", TFrame.Close, "LEFT", -1)
+    TFrame.CopyET:SetText("E")
+    TFrame.CopyET:SetScript("OnClick", function(self)
+      if not EventTraceFrame then print("ETRACE NOT OPEN") return end
       local t = self:GetParent().Text
       local text = ""
       for i=1, #EventTraceFrame.events do
           if EventTraceFrame.events[i] then
-            text = text.."\n"..EventTraceFrame.events[i]
+            text = text .. "\n" .. EventTraceFrame.events[i]
           else
-            text = text.."\n---->Could not read event!<----"
+            text = text .. "\n----> Could not read event! <----"
           end
       end
       t:SetText("")
       t:SetText(text)
       t:ClearFocus()
     end)
+    
+    TFrame.CopyCF = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
+    TFrame.CopyCF:SetSize(24, 24)
+    TFrame.CopyCF:SetPoint("RIGHT", TFrame.CopyET, "LEFT", -1)
+    TFrame.CopyCF:SetText("C")
+    TFrame.CopyCF:SetScript("OnClick", function(self)
+      local t = self:GetParent().Text
+      local text = ""
+      for i=1, _G['ChatFrame1']:GetNumMessages() do
+          if _G['ChatFrame1']:GetMessageInfo(i) then
+            text = text .. "\n" .. _G['ChatFrame1']:GetMessageInfo(i)
+          else
+            text = text .. "\n----> Could not read event! <----"
+          end
+      end
+      t:SetText("")
+      t:SetText(text)
+      t:ClearFocus()
+    end)
+    
     TFrame:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp")
     TFrame:RegisterForDrag("LeftButton")
     TFrame:SetMovable(true)
@@ -187,8 +211,12 @@ local function GetDemonHunterForm()
   for i = 1,40 do
     local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
     -- print(name, spellId)
-    if spellId == 162264 then returnValue = 1
-    elseif spellId == 187827 then returnValue = 2
+    if spellId == 162264 then
+      returnValue = 1
+      break
+    elseif spellId == 187827 then
+      returnValue = 2
+      break
     end
   end
 
