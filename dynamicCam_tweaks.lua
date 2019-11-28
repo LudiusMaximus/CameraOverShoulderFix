@@ -73,7 +73,7 @@ local InterfaceOptionsFrame_OpenToCategory = _G.InterfaceOptionsFrame_OpenToCate
 cosFix.shoulderOffsetModelFactor = 1
 
 -- To allow zooming during shoulder offset easing, we must store the current
--- shoulder offset in a global variable that is changed by the easing process
+-- *uncorrected* shoulder offset in a global variable that is changed by the easing process
 -- and taken into account by the zoom functions.
 cosFix.currentShoulderOffset = 0
 
@@ -241,17 +241,18 @@ if IsAddOnLoaded("DynamicCam") then
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
       ---------------------------------------------------------
-      offset = offset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.shoulderOffsetModelFactor
+      cosFix.currentShoulderOffset = offset
+      
+      local correctedOffset = offset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.shoulderOffsetModelFactor
 
-      -- Also check for nan (offset == offset).
-      if (offset and type(offset) == 'number' and offset == offset) then
+      -- Also check for nan (correctedOffset == correctedOffset).
+      if (correctedOffset and type(correctedOffset) == 'number' and correctedOffset == correctedOffset) then
 
-          cosFix.currentShoulderOffset = offset
           ---------------------------------------------------------
           -- End of added cosFix code -----------------------------
           ---------------------------------------------------------
 
-          CosFix_OriginalSetCVar("test_cameraOverShoulder", offset)
+          CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedOffset)
       end
   end
 
@@ -283,16 +284,6 @@ if IsAddOnLoaded("DynamicCam") then
       DynamicCam:DebugPrint("test_cameraOverShoulder", oldOffest, "->", endValue);
 
       if oldOffest == endValue then return end
-
-      -- setShoulderOffset does the correction at any call.
-      -- This is why oldOffest and endValue must be the uncorrected values!
-      local zoomFactor = cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom())
-
-      if zoomFactor == 0 then
-        oldOffest = 0
-      else
-        oldOffest = oldOffest / (zoomFactor * cosFix.shoulderOffsetModelFactor)
-      end
 
       -- Store that we are currently easing,
       -- such that no triggered event will set the shoulder offset prematurely.

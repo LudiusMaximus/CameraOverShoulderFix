@@ -269,13 +269,9 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
   local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
 
   if delay == 0 then
-    cosFix.currentShoulderOffset = correctedShoulderOffset
     return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
   else
-    return cosFix_wait(delay, function()
-      cosFix.currentShoulderOffset = correctedShoulderOffset
-      CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-    end)
+    return cosFix_wait(delay, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
   end
 
 end
