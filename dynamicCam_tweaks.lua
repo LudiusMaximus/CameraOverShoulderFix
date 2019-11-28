@@ -863,7 +863,7 @@ if IsAddOnLoaded("DynamicCam") then
               local shoulderTransitionTime = nil
               local oldSituation = DynamicCam.db.profile.situations[oldSituationID]
               if situation.view.enabled or (oldSituation and oldSituation.view.enabled and oldSituation.view.restoreView) then
-                  shoulderTransitionTime = 0.5
+                shoulderTransitionTime = 0.5
               else
                 shoulderTransitionTime = transitionTime
               end

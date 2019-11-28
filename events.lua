@@ -252,6 +252,7 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
         self.shoulderOffsetModelFactor = modelFactor
         -- For delay == 0 we have to set the value here as well, because the next
         -- setShoulderOffset() call of the easing might be too late.
+        -- TODO: Really? Is the easing not called at each frame?
         return CosFix_OriginalSetCVar("test_cameraOverShoulder", cosFix.currentShoulderOffset * shoulderOffsetZoomFactor * modelFactor)
       else
         return cosFix_wait(delay, function() self.shoulderOffsetModelFactor = modelFactor end)
@@ -268,9 +269,13 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
   local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
 
   if delay == 0 then
+    cosFix.currentShoulderOffset = correctedShoulderOffset
     return CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
   else
-    return cosFix_wait(delay, CosFix_OriginalSetCVar, "test_cameraOverShoulder", correctedShoulderOffset)
+    return cosFix_wait(delay, function()
+      cosFix.currentShoulderOffset = correctedShoulderOffset
+      CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+    end)
   end
 
 end
