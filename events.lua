@@ -20,9 +20,9 @@ local UnitClass = _G.UnitClass
 local UnitRace = _G.UnitRace
 local UnitSex = _G.UnitSex
 
+
 local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
-
-
+local DynamicCam = _G.DynamicCam
 
 -- Use this code to copy stuff from the eventtrace window into clipboard.
 -- Thanks a lot to Fizzlemizz:
@@ -37,11 +37,11 @@ SlashCmdList["MYTRACE"] = function(msg)
     TFrame:SetBackdropColor(0, 0, 0)
     TFrame:SetPoint("CENTER", 0)
     TFrame:SetSize(400, 400)
-    
+
     TFrame.SF = CreateFrame("ScrollFrame", "$parent_DF", TFrame, "UIPanelScrollFrameTemplate")
     TFrame.SF:SetPoint("TOPLEFT", TFrame, 12, -30)
     TFrame.SF:SetPoint("BOTTOMRIGHT", TFrame, -30, 10)
-    
+
     TFrame.Text = CreateFrame("EditBox", nil, TFrame)
     TFrame.Text:SetMultiLine(true)
     TFrame.Text:SetSize(180, 170)
@@ -52,13 +52,13 @@ SlashCmdList["MYTRACE"] = function(msg)
     TFrame.Text:SetAutoFocus(false)
     TFrame.Text:SetScript("OnEscapePressed", function(self)self:ClearFocus() end)
     TFrame.SF:SetScrollChild(TFrame.Text)
-    
+
     TFrame.Close = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
     TFrame.Close:SetSize(24, 24)
     TFrame.Close:SetPoint("TOPRIGHT", -8, -8)
     TFrame.Close:SetText("X")
     TFrame.Close:SetScript("OnClick", function(self) self:GetParent():Hide() end)
-    
+
     TFrame.CopyET = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
     TFrame.CopyET:SetSize(24, 24)
     TFrame.CopyET:SetPoint("RIGHT", TFrame.Close, "LEFT", -1)
@@ -78,7 +78,7 @@ SlashCmdList["MYTRACE"] = function(msg)
       t:SetText(text)
       t:ClearFocus()
     end)
-    
+
     TFrame.CopyCF = CreateFrame("Button", nil, TFrame, "UIPanelButtonTemplate")
     TFrame.CopyCF:SetSize(24, 24)
     TFrame.CopyCF:SetPoint("RIGHT", TFrame.CopyET, "LEFT", -1)
@@ -97,7 +97,7 @@ SlashCmdList["MYTRACE"] = function(msg)
       t:SetText(text)
       t:ClearFocus()
     end)
-    
+
     TFrame:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp")
     TFrame:RegisterForDrag("LeftButton")
     TFrame:SetMovable(true)
@@ -226,8 +226,12 @@ end
 
 -- Determine and set a the shoulder offset with or without a delay.
 -- The last argument (modelFactor) is optional and can be set
--- if the modelFactor should not be determined by CorrectShoulderOffset().
-function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, delay, modelFactor)
+-- if a specific modelFactor should not enforced.
+function cosFix:setDelayedShoulderOffset(delay, modelFactor)
+
+  local userSetShoulderOffset = self:GetUserSetShoulderOffset()
+
+  local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
 
   if not modelFactor then
     modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset)
@@ -242,18 +246,18 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
 
   if dynamicCamLoaded then
 
-    -- While shoulder offset easing is in progress
-    -- we do not want an event to set the target value too early.
+    -- While easing is in progress we do not want an event to set the target value too early.
     -- Instead we just update the shoulderOffsetModelFactor which is taken
-    -- into account by the easing functions.
-    if self.easeShoulderOffsetInProgressReactiveZoom[1] == true or self.easeShoulderOffsetInProgressSituationChange[1] == true then
+    -- into account by the easing function.
+    if DynamicCam.LibCamera:ZoomInProgress() or self.easeShoulderOffsetInProgress then
 
       if delay == 0 then
         self.shoulderOffsetModelFactor = modelFactor
-        -- For delay == 0 we have to set the value here as well, because the next
-        -- setShoulderOffset() call of the easing might be too late.
-        -- TODO: Really? Is the easing not called at each frame?
-        return CosFix_OriginalSetCVar("test_cameraOverShoulder", cosFix.currentShoulderOffset * shoulderOffsetZoomFactor * modelFactor)
+        -- For delay == 0 we have to set the value here as well, because shoulderOffsetEasingFrame
+        -- may already have fired in this frame (?).
+        -- The currentShoulderOffset variable is constantly altered by the easing function,
+        -- so it is the correct value at this time.
+        return CosFix_OriginalSetCVar("test_cameraOverShoulder", self.currentShoulderOffset * shoulderOffsetZoomFactor * modelFactor)
       else
         return cosFix_wait(delay, function() self.shoulderOffsetModelFactor = modelFactor end)
       end
@@ -263,7 +267,6 @@ function cosFix:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZo
     end
 
   end
-
 
 
   local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
@@ -292,13 +295,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   end
 
 
-  local userSetShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
-  if dynamicCamLoaded then
-    userSetShoulderOffset = self:GetUserSetShoulderOffset()
+  local userSetShoulderOffset = self:GetUserSetShoulderOffset()
+
+  -- If no shoulder offset is set, we are done!
+  if userSetShoulderOffset == 0 then
+    return
   end
-
-  local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
-
 
 
   -- Needed for Worgen form change..
@@ -361,7 +363,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           end
 
           -- Call with pre-determined modelFactor to avoid recalculation.
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.06, modelFactor)
+          return self:setDelayedShoulderOffset(0.06, modelFactor)
 
         else
           -- print("Changing into Worgen.")
@@ -384,12 +386,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- if spellId == 198013 then
         -- print("UNIT_SPELLCAST_SUCCEEDED for METAMORPHOSIS HAVOC")
         -- self.lastSpellCastSentTime = GetTime()
-        
+
         -- local _, raceFile = UnitRace("player")
         -- local genderCode = UnitSex("player")
         -- local factor = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
 
-        -- return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.64, factor)
+        -- return self:setDelayedShoulderOffset(0.64, factor)
 
       -- end
     -- end  -- (englishClass == "DEMONHUNTER")
@@ -464,7 +466,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- Call with pre-determined modelFactor to avoid recalculation.
         -- TODO: In fact this is still a little bit too late! But if we want to set it earlier, we would have
         -- to capture every event that forces a change from worgen into human... Is it possible?
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0, modelFactor)
+        return self:setDelayedShoulderOffset(0, modelFactor)
 
       else
         -- This should never happen except directly after logging in.
@@ -476,7 +478,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
         end
         -- Call with pre-determined modelFactor to avoid recalculation.
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0, modelFactor)
+        return self:setDelayedShoulderOffset(0, modelFactor)
 
       end
 
@@ -509,7 +511,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- The UPDATE_SHAPESHIFT_FORM while changing into Ghostwolf comes too early.
         -- And also the subsequent UNIT_MODEL_CHANGED is still too early.
         -- That is why we have to use  a delay instead.
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.01)
+        return self:setDelayedShoulderOffset(0.01)
 
       else
         -- print("You are changing into normal Shaman!")
@@ -564,8 +566,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           self.activateNextHealthFrequent = false
 
           -- Sometimes you need this, sometimes the below... WTF
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.06)
-          -- return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+          return self:setDelayedShoulderOffset(0.06)
+          -- return self:setDelayedShoulderOffset(0)
 
         elseif formId == 5 then
           -- print("bear")
@@ -579,8 +581,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           self.activateNextHealthFrequent = false
 
           -- Sometimes you need this, sometimes the below... WTF
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.018)
-          -- return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+          return self:setDelayedShoulderOffset(0.018)
+          -- return self:setDelayedShoulderOffset(0)
 
         end
 
@@ -621,7 +623,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
               -- We have not observed the travelform spellcast, so we do not need to wait for it any longer.
               self.waitingForUnitSpellcastSentSucceeded = false
 
-              return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+              return self:setDelayedShoulderOffset(0)
 
             end
 
@@ -647,7 +649,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.05)
+      return self:setDelayedShoulderOffset(0.05)
     end
 
 
@@ -696,12 +698,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- We can then set the value unmounted immedeately.
       if self.db.char.isOnTaxi then
         self.db.char.isOnTaxi = false
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(0)
       end
 
       -- The same goes for being dismounted automatically while entering indoors.
       if IsIndoors() then
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(0)
       end
 
       -- The same goes for being dismounted in certain outdoor areas
@@ -710,7 +712,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- Interestingly this does not work for entering indoors, so we still need the check above.
       local _, _, _, _, lastActiveMountUsable = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
       if not lastActiveMountUsable then
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(0)
       end
 
 
@@ -721,7 +723,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- offset immedeately.
       if self.unitAuraBeforeMountDisplayChanged == true then
         self.unitAuraBeforeMountDisplayChanged = false
-        return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+        return self:setDelayedShoulderOffset(0)
       end
 
       -- Otherwise, we are good for our standard procedure
@@ -746,12 +748,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         modelFactor = modelFactor * 10
       end
       -- Call with pre-determined modelFactor to avoid recalculation.
-      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0, modelFactor)
+      return self:setDelayedShoulderOffset(0, modelFactor)
 
 
     else
       -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == true")
-      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+      return self:setDelayedShoulderOffset(0)
 
     end
 
@@ -775,7 +777,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
-      return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+      return self:setDelayedShoulderOffset(0)
 
     end
 
@@ -799,18 +801,18 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         if demonHunterForm == 1 then
           -- print("UNIT_AURA for METAMORPHOSIS HAVOC")
           -- TODO: This is never right!!! :-(
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.654)
+          return self:setDelayedShoulderOffset(0.654)
         end
 
         if demonHunterForm == 2 then
           -- print("UNIT_AURA for METAMORPHOSIS VENGEANCE")
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.966)
+          return self:setDelayedShoulderOffset(0.966)
         end
 
         if demonHunterForm == 0 then
           -- print("UNIT_AURA for DEMON HUNTER back to normal")
           -- TODO: For a framerate of 30 or lower, this still gives a camera jerk!
-          return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0.082)
+          return self:setDelayedShoulderOffset(0.082)
         end
 
       end
@@ -841,7 +843,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     local modelFactor = self:CorrectShoulderOffset(userSetShoulderOffset, vehicleGuid)
 
     -- Call with pre-determined modelFactor to avoid recalculation.
-    return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0, modelFactor)
+    return self:setDelayedShoulderOffset(0, modelFactor)
 
   -- Needed for vehicles.
   elseif event == "UNIT_EXITING_VEHICLE" then
@@ -852,14 +854,14 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       return
     end
 
-    return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+    return self:setDelayedShoulderOffset(0)
 
 
   -- Needed for being teleported into a dungeon while mounted,
   -- because when entering you get automatically dismounted
   -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
   elseif event == "PLAYER_ENTERING_WORLD" then
-    return self:setDelayedShoulderOffset(userSetShoulderOffset, shoulderOffsetZoomFactor, 0)
+    return self:setDelayedShoulderOffset(0)
   end
 
 end

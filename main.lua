@@ -15,11 +15,9 @@ local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
 
 local GetCameraZoom = _G.GetCameraZoom
 
-local DynamicCam = _G.DynamicCam
 
 local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
-
-
+local DynamicCam = _G.DynamicCam
 
 local runhook = true
 local function CosFixSetCVar(...)
@@ -45,7 +43,7 @@ end
 
 
 -- Store original camera zoom functions.
--- If DynamicCam has reative zoom enabled, these have already been
+-- If DynamicCam has reactive zoom enabled, these have already been
 -- overridden, we will get the real original functions below by
 -- temporarily deactivating reactive zoom.
 local CosFix_OriginalCameraZoomIn = CameraZoomIn
@@ -63,6 +61,7 @@ if dynamicCamLoaded then
   if DynamicCam.db.profile.reactiveZoom.enabled then
     DynamicCam:ReactiveZoomOn()
   end
+  
 end
 
 
@@ -71,6 +70,8 @@ end
 local targetZoom;
 function CosFix_CameraZoomIn(increments, automated)
 
+  -- print("CosFix_CameraZoomIn")
+  
   -- No idea, why WoW does in-out-in-out with increments 0
   -- after each mouse wheel turn.
   if increments == 0 then return end
@@ -80,6 +81,8 @@ function CosFix_CameraZoomIn(increments, automated)
   local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
   if dynamicCamLoaded then
     userSetShoulderOffset = cosFix.currentShoulderOffset
+    
+    DynamicCam.LibCamera:StopZooming(true)
   end
 
   local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
@@ -92,12 +95,12 @@ function CosFix_CameraZoomIn(increments, automated)
   local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
-
   return CosFix_OriginalCameraZoomIn(increments, automated)
 end
 
-
 function CosFix_CameraZoomOut(increments, automated)
+
+  -- print("CosFix_CameraZoomOut")
 
   -- No idea, why WoW does in-out-in-out with increments 0
   -- after each mouse wheel turn.
@@ -108,6 +111,9 @@ function CosFix_CameraZoomOut(increments, automated)
   local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
   if dynamicCamLoaded then
     userSetShoulderOffset = cosFix.currentShoulderOffset
+    
+    -- Stop zooming that might be currently in progress from a situation change.
+    DynamicCam.LibCamera:StopZooming(true)
   end
 
   local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)

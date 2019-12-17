@@ -11,4 +11,6 @@
   
   <Include file="Libs\AceDB-3.0\AceDB-3.0.xml"/>
   <Include file="Libs\AceTimer-3.0\AceTimer-3.0.xml"/>
+  
+  <Script file="Libs\LibCamera_mod\LibCamera_mod.lua"/>
 </Ui>

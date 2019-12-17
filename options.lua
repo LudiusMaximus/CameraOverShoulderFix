@@ -2,6 +2,10 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
+local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
+local DynamicCam = _G.DynamicCam
+
+
 local defaults = {
   profile = {
     modelIndependentShoulderOffset = true,
@@ -32,7 +36,7 @@ local optionsTable = {
       get = function() return cosFix.db.profile.modelIndependentShoulderOffset end,
       set = function(_, newValue)
               cosFix.db.profile.modelIndependentShoulderOffset = newValue
-              if IsAddOnLoaded("DynamicCam") then
+              if dynamicCamLoaded then
                 DynamicCam:ApplyDefaultCameraSettings()
               else
                 for variable, value in pairs(cosFix.db.profile.cvars) do
@@ -51,7 +55,7 @@ local optionsTable = {
       get = function() return cosFix.db.profile.shoulderOffsetZoom end,
       set = function(_, newValue)
               cosFix.db.profile.shoulderOffsetZoom = newValue
-              if IsAddOnLoaded("DynamicCam") then
+              if dynamicCamLoaded then
                 DynamicCam:ApplyDefaultCameraSettings()
               else
                 for variable, value in pairs(cosFix.db.profile.cvars) do
@@ -75,7 +79,7 @@ local optionsTable = {
       order = 4,
       type = 'group',
       name = "Basic camera variables",
-      hidden = IsAddOnLoaded("DynamicCam"),
+      hidden = dynamicCamLoaded,
       inline = true,
       args = {
         description = {

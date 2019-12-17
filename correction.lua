@@ -24,7 +24,7 @@ local UnitSex = _G.UnitSex
 
 
 local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
-
+local DynamicCam = _G.DynamicCam
 
 -- Frame to check what player model is active.
 if not cosFix.modelFrame then
@@ -133,13 +133,9 @@ function cosFix:SetLastModelId()
       self.shoulderOffsetModelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
       -- Set the shoulder offset again!
-      if self.easeShoulderOffsetInProgressReactiveZoom[1] == false and self.easeShoulderOffsetInProgressSituationChange[1] == false then
+      if not dynamicCamLoaded or (not DynamicCam.LibCamera:ZoomInProgress() and not self.easeShoulderOffsetInProgress) then
 
-        local userSetShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
-        if dynamicCamLoaded then
-          userSetShoulderOffset = self:GetUserSetShoulderOffset()
-        end
-
+        local userSetShoulderOffset = self:GetUserSetShoulderOffset()
         local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
         local modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
