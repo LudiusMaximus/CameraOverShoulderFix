@@ -93,19 +93,22 @@ if dynamicCamLoaded then
   --     ApplyDefaultCameraSettings() called at the beginning of ExitSituation()).
 
 
-  -- This is the factor by which the userSetShoulderOffset must be multiplied at all times.
-  -- This is particularly important for shoulderOffset easing, because the factor may change
-  -- while the easing is happening.
-  cosFix.shoulderOffsetModelFactor = 1
 
   -- To allow zooming during shoulder offset easing, we must store the current
   -- *uncorrected* shoulder offset in a global variable that is changed by the easing process
   -- and taken into account by the zoom functions.
   cosFix.currentShoulderOffset = 0
 
-
+  -- This is the factor by which the userSetShoulderOffset must be multiplied at all times.
+  -- This is particularly important for shoulderOffset easing, because the factor may change
+  -- while the easing is happening.
+  cosFix.currentModelFactor = 1
 
   cosFix.easeShoulderOffsetInProgress = false
+
+
+  -- We use this to suppress situation entering easing after logging in!
+  local evaluateSituationsAfterStartup = false
 
 
 
@@ -117,7 +120,7 @@ if dynamicCamLoaded then
 
     if not LibCamera:ZoomInProgress() and not cosFix.easeShoulderOffsetInProgress then return end
 
-    local correctedOffset = cosFix.currentShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.shoulderOffsetModelFactor
+    local correctedOffset = cosFix.currentShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.currentModelFactor
 
     -- print("shoulderOffsetEasingFrame setting", cosFix.currentShoulderOffset, GetCameraZoom())
 
@@ -134,7 +137,7 @@ if dynamicCamLoaded then
   -- Shut down DynamicCam before defining the duplicate functions and variables.
   DynamicCam:Shutdown();
 
-  
+
 
   ---------------
   -- CONSTANTS --
@@ -300,16 +303,33 @@ if dynamicCamLoaded then
 
       -- Store that we are currently easing,
       -- such that no triggered event will set the shoulder offset prematurely.
-      -- The events just set cosFix.shoulderOffsetModelFactor to the new value.
-      inProgressFlag = true
+      -- The events just set cosFix.currentModelFactor to the new value.
+      cosFix.easeShoulderOffsetInProgress = true
+
       easeShoulderOffsetHandle = LibEasing:Ease(
-        function(offset) cosFix.currentShoulderOffset = offset end,
+        function(offset)
+
+          -- If offset changes sign while mounted, we need to update currentModelFactor!
+          if IsMounted() then
+            local oldOffset = cosFix.currentShoulderOffset
+            cosFix.currentShoulderOffset = offset
+            if (oldOffset < 0 and cosFix.currentShoulderOffset >= 0) or (oldOffset >= 0 and cosFix.currentShoulderOffset < 0) then
+              local modelFactor = cosFix:CorrectShoulderOffset()
+              if modelFactor ~= -1 then
+                cosFix.currentModelFactor = modelFactor
+              end
+            end
+          else
+            cosFix.currentShoulderOffset = offset
+          end
+
+        end,
         oldValue,
         newValue,
         duration,
         easingFunc,
         function()
-          inProgressFlag = false
+          cosFix.easeShoulderOffsetInProgress = false
           if callback then
             callback()
           end
@@ -627,6 +647,9 @@ if dynamicCamLoaded then
       end
 
       started = true;
+
+      -- added cosFix code
+      evaluateSituationsAfterStartup = false
   end
   DynamicCam.Startup = Startup
 
@@ -670,7 +693,6 @@ if dynamicCamLoaded then
 
       -- print("EvaluateSituations", GetTime())
 
-
       -- if we currently have timer running, kill it
       if (evaluateTimer) then
           DynamicCam:CancelTimer(evaluateTimer);
@@ -684,7 +706,7 @@ if dynamicCamLoaded then
           -- go through all situations pick the best one
           for id, situation in pairs(DynamicCam.db.profile.situations) do
               if (situation.enabled) then
-                  -- evaluate the condition, if it checks out and the priority is larger then any other, set it
+                  -- evaluate the condition, if it checks out and the priority is larger than any other, set it
                   local lastEvaluate = conditionExecutionCache[id];
                   local thisEvaluate = DC_RunScript(situation.condition, id);
                   conditionExecutionCache[id] = thisEvaluate;
@@ -746,11 +768,18 @@ if dynamicCamLoaded then
               end
           end
       end
+      
+      -- added cosFix code
+      evaluateSituationsAfterStartup = true
+
   end
   DynamicCam.EvaluateSituations = EvaluateSituations
 
 
   local function SetSituation(_, situationID)
+
+      -- print("SetSituation", situationID, GetTime())
+
       local oldSituationID = DynamicCam.currentSituationID;
       local restoringZoom;
 
@@ -767,8 +796,7 @@ if dynamicCamLoaded then
 
   local function EnterSituation(_, situationID, oldSituationID, skipZoom)
 
-
-
+      -- print("EnterSituation", GetTime())
 
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
@@ -778,6 +806,12 @@ if dynamicCamLoaded then
       -- E.g. stop NPC interacation and start it again right away.
       if not skipZoom then
         LibCamera:StopZooming()
+      end
+
+      local noEasing = false
+      if evaluateSituationsAfterStartup == false then
+        evaluateSituationsAfterStartup = true
+        noEasing = true
       end
       ---------------------------------------------------------
       -- End of added cosFix code -----------------------------
@@ -861,6 +895,10 @@ if dynamicCamLoaded then
 
               DynamicCam:DebugPrint("Setting zoom level because of situation entrance", newZoomLevel, duration);
 
+              if noEasing then
+                duration = 0
+              end
+
               LibCamera:SetZoom(newZoomLevel, duration, LibEasing[DynamicCam.db.profile.easingZoom]);
 
           end
@@ -892,15 +930,12 @@ if dynamicCamLoaded then
                 shoulderTransitionTime = 0.5
               end
 
-
-              local modelFactor = cosFix:CorrectShoulderOffset(value)
-              if modelFactor ~= -1 then
-                  -- TODO: I don't get it: This is only necessary because the modelFactor for mounts depends on value.
-                  cosFix.shoulderOffsetModelFactor = modelFactor
-
-                  easeShoulderOffset(value, shoulderTransitionTime)
-
+              if noEasing then
+                DC_SetCVar(cvar, value)
+              else
+                easeShoulderOffset(value, shoulderTransitionTime)
               end
+
               ---------------------------------------------------------
               -- End of added cosFix code -----------------------------
               ---------------------------------------------------------
@@ -936,6 +971,8 @@ if dynamicCamLoaded then
 
 
   local function ExitSituation(_, situationID, newSituationID)
+
+      -- print("ExitSituation", GetTime())
 
       local restoringZoom;
       local situation = DynamicCam.db.profile.situations[situationID];
@@ -1055,20 +1092,15 @@ if dynamicCamLoaded then
           -- Must get shoulder offset of newSituationID if any!
           local userSetShoulderOffset = cosFix:GetUserSetShoulderOffset(newSituationID);
 
-          local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset);
-          if (modelFactor ~= -1) then
-              -- This is only necessary because the modelFactor for mounts depends on userSetShoulderOffset.
-              cosFix.shoulderOffsetModelFactor = modelFactor;
-
-              -- If we are resetting a view, we want the shoulder offset change to be as fast as the view change!
-              if (situation.view.enabled and situation.view.restoreView) then
-                  t = 0.5
-              end
-
-              easeShoulderOffset(userSetShoulderOffset, t, LibEasing[DynamicCam.db.profile.easingZoom])
-
-              DynamicCam:DebugPrint("Restoring zoom level:", zoomLevel, " and shoulder offset:", userSetShoulderOffset, " with duration:", t);
+          -- If we are resetting a view, we want the shoulder offset change to be as fast as the view change!
+          if (situation.view.enabled and situation.view.restoreView) then
+              t = 0.5
           end
+
+          easeShoulderOffset(userSetShoulderOffset, t, LibEasing[DynamicCam.db.profile.easingZoom])
+
+          DynamicCam:DebugPrint("Restoring zoom level:", zoomLevel, " and shoulder offset:", userSetShoulderOffset, " with duration:", t);
+
       else
 
           -- Restore only test_cameraOverShoulder, because we skipped it by passing
@@ -1083,22 +1115,16 @@ if dynamicCamLoaded then
             -- Must get shoulder offset of newSituationID if any!
             local userSetShoulderOffset = cosFix:GetUserSetShoulderOffset(newSituationID);
 
-            local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset);
-            if (modelFactor ~= -1) then
-                -- This is only necessary because the modelFactor for mounts depends on userSetShoulderOffset.
-                cosFix.shoulderOffsetModelFactor = modelFactor;
-
-                -- Actually no idea, why DynamicCam uses 0.75 here as a default...
-                local t = 0.75
-                -- If we are setting a view, we want the shoulder offset change to be as fast as the view change!
-                if (situation.view.enabled and situation.view.restoreView) then
-                    t = 0.5
-                end
-
-                easeShoulderOffset(userSetShoulderOffset, t)
-
-                DynamicCam:DebugPrint("Not restoring zoom level but shoulder offset: " .. userSetShoulderOffset);
+            -- Actually no idea, why DynamicCam uses 0.75 here as a default...
+            local t = 0.75
+            -- If we are setting a view, we want the shoulder offset change to be as fast as the view change!
+            if (situation.view.enabled and situation.view.restoreView) then
+                t = 0.5
             end
+
+            easeShoulderOffset(userSetShoulderOffset, t)
+
+            DynamicCam:DebugPrint("Not restoring zoom level but shoulder offset: " .. userSetShoulderOffset);
 
           end
           ---------------------------------------------------------
@@ -1294,6 +1320,8 @@ if dynamicCamLoaded then
   -------------
   local function ApplyDefaultCameraSettings(_, newSituationID)
 
+      -- print("ApplyDefaultCameraSettings", newSituationID, GetTime())
+
       local curSituation = DynamicCam.db.profile.situations[DynamicCam.currentSituationID];
 
       if (newSituationID) then
@@ -1323,12 +1351,7 @@ if dynamicCamLoaded then
                   -- just as fast as the camera zoom, instead of setting it instantaneously here.
                   -- Thus this flag can be set in ExitSituation() before calling ApplyDefaultCameraSettings().
                   if (not cosFix.exitingSituationFlag) then
-                      local modelFactor = cosFix:CorrectShoulderOffset(value);
-                      if (modelFactor ~= -1) then
-                          -- This is only necessary because the modelFactor for mounts depends on value.
-                          cosFix.shoulderOffsetModelFactor = modelFactor;
-                          easeShoulderOffset(value, 0.75)
-                      end
+                      DC_SetCVar(cvar, value);
                   end
                   ---------------------------------------------------------
                   -- End of added cosFix code -----------------------------
@@ -1490,7 +1513,6 @@ if dynamicCamLoaded then
 
           -- print("REACTIVE ZOOM start")
           -- LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc], function() print("REACTIVE ZOOM end") end)
-
           LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc])
 
 

@@ -4,7 +4,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 -- Map mountId to sholder offset factor.
 cosFix.mountIdToShoulderOffsetFactor = {
 
-  [6]   = 7.5,   -- Brown Horse
+  [6]   = 7.74,  -- Brown Horse                  - 2019-12-19
   [17]  = 7.6,   -- Felsteed
   [19]  = 6.0,   -- Dire Wolf
   [71]  = 4.7,   -- Gray Kodo
@@ -17,7 +17,7 @@ cosFix.mountIdToShoulderOffsetFactor = {
   [157] = 6.45,  -- Purple Hawkstryder
   [158] = 6.45,  -- Blue Hawkstryder
   [159] = 6.45,  -- Black Hawkstryder
-  [203] = 5.6,   -- Cenarion War Hippogryph
+  [203] = 5.71,  -- Cenarion War Hippogryph      - 2019-12-19
   [268] = 2.5,   -- Albino Drake
   [309] = 4.7,   -- White Kodo
   [310] = 6.1,   -- Black Wolf

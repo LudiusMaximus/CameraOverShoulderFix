@@ -15,8 +15,8 @@ local defaults = {
     cvars = {
       test_cameraOverShoulder = 1.5,
       test_cameraDynamicPitch = 1,
-      test_cameraDynamicPitchBaseFovPad = 0.75,
-      test_cameraDynamicPitchBaseFovPadFlying = 0.75,
+      test_cameraDynamicPitchBaseFovPad = 0.7,
+      test_cameraDynamicPitchBaseFovPadFlying = 0.95,
       test_cameraDynamicPitchBaseFovPadDownScale = 1,
     }
   }
@@ -116,6 +116,21 @@ local optionsTable = {
           width = "full",
           get = function() return cosFix.db.profile.cvars.test_cameraOverShoulder end,
           set = function(_, newValue)
+                  
+                  -- If offset changes sign while mounted, we need to update currentModelFactor!
+                  if IsMounted() then
+                    local oldOffset = cosFix.currentShoulderOffset
+                    cosFix.currentShoulderOffset = newValue
+                    if (oldOffset < 0 and cosFix.currentShoulderOffset >= 0) or (oldOffset >= 0 and cosFix.currentShoulderOffset < 0) then
+                      local modelFactor = cosFix:CorrectShoulderOffset()
+                      if modelFactor ~= -1 then
+                        cosFix.currentModelFactor = modelFactor
+                      end
+                    end
+                  else
+                    cosFix.currentShoulderOffset = newValue
+                  end
+                  
                   cosFix.db.profile.cvars.test_cameraOverShoulder = newValue
                   SetCVar("test_cameraOverShoulder", newValue)
                 end,

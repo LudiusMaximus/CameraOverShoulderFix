@@ -5,7 +5,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 cosFix.modelIdToShoulderOffsetFactor = {
 
   -- Alliance core races
-  [1011653] = 1.25,   -- Human male
+  [1011653] = 1.26,   -- Human male        - 2019-12-19
   [1000764] = 1.45,   -- Human female
   [878772]  = 1.13,   -- Dwarf male
   [950080]  = 1.46,   -- Dwarf female

@@ -130,16 +130,12 @@ function cosFix:SetLastModelId()
 
       self.db.char.lastModelId = modelId
 
-      self.shoulderOffsetModelFactor = self.modelIdToShoulderOffsetFactor[modelId]
+      self.currentModelFactor = self.modelIdToShoulderOffsetFactor[modelId]
 
       -- Set the shoulder offset again!
       if not dynamicCamLoaded or (not DynamicCam.LibCamera:ZoomInProgress() and not self.easeShoulderOffsetInProgress) then
 
-        local userSetShoulderOffset = self:GetUserSetShoulderOffset()
-        local shoulderOffsetZoomFactor = self:GetShoulderOffsetZoomFactor(GetCameraZoom())
-        local modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
-
-        local correctedShoulderOffset = userSetShoulderOffset * shoulderOffsetZoomFactor * modelFactor
+        local correctedShoulderOffset = self.currentShoulderOffset * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor
         CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
       end
@@ -182,13 +178,11 @@ end
 -- If we want the camera to always have the same shoulder offset relative to the player's center,
 -- we need to adjust the test_cameraOverShoulder value depending on the current player model.
 -- Arguments:
---   offset                   The original shoulder offset value that should be adjusted.
---                            Is only required to determine the mountedFactor or to stop the function if not needed.
 --   enteringVehicleGuid      (optional) When CorrectShoulderOffset is called while entering a vehicle
 --                            we pass the vehicle's GUID to determine the test_cameraOverShoulder adjustment.
 --                            This is necessary because while entering the vehicle, UnitInVehicle("player") will
 --                            still return 'false' while the camera is already regarding the vehicle's model.
-function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
+function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
 
   -- self.modelFrame:SetUnit("player")
@@ -196,15 +190,8 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
   -- print("Current modelId", modelId)
 
 
-  -- print("CorrectShoulderOffset", offset)
-
   -- If the "Correct Shoulder Offset" function is deactivated, we do not correct the offset.
   if not self.db.profile.modelIndependentShoulderOffset then
-    return 1
-  end
-
-  -- If no offset is set, there is no need to correct it.
-  if offset == 0 then
     return 1
   end
 
@@ -254,7 +241,7 @@ function cosFix:CorrectShoulderOffset(offset, enteringVehicleGuid)
 
     -- No idea why this is necessary when mounted; seems to be a persistent bug on Blizzard's side!
     local mountedFactor = 1
-    if offset < 0 then
+    if cosFix.currentShoulderOffset < 0 then
       mountedFactor = mountedFactor / 10
     end
 

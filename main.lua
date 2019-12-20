@@ -27,12 +27,16 @@ local function CosFixSetCVar(...)
   local variable, value = ...
 
   if variable == "test_cameraOverShoulder" then
+  
+    cosFix.currentShoulderOffset = value
 
-    local modelFactor = cosFix:CorrectShoulderOffset(value)
+    local modelFactor = cosFix:CorrectShoulderOffset()
     -- setCVar should always work. For unknown model IDs we use the default 1.
     if modelFactor == -1 then
       modelFactor = 1
     end
+
+    cosFix.currentModelFactor = modelFactor
 
     value = value * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * modelFactor
 
@@ -40,6 +44,7 @@ local function CosFixSetCVar(...)
   end
 
 end
+hooksecurefunc("SetCVar", CosFixSetCVar)
 
 
 -- Store original camera zoom functions.
@@ -78,21 +83,12 @@ function CosFix_CameraZoomIn(increments, automated)
 
   local targetZoom = math.max(0, GetCameraZoom() - increments)
 
-  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+  -- Stop zooming that might currently be in progress from a situation change.
   if dynamicCamLoaded then
-    userSetShoulderOffset = cosFix.currentShoulderOffset
-    
     DynamicCam.LibCamera:StopZooming(true)
   end
 
-  local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
-
-  -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
-  if modelFactor == -1 then
-    modelFactor = 1
-  end
-
-  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
+  local correctedShoulderOffset = cosFix.currentShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * cosFix.currentModelFactor
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
   return CosFix_OriginalCameraZoomIn(increments, automated)
@@ -108,22 +104,12 @@ function CosFix_CameraZoomOut(increments, automated)
 
   targetZoom = math.min(39, GetCameraZoom() + increments)
 
-  local userSetShoulderOffset = cosFix.db.profile.cvars.test_cameraOverShoulder
+  -- Stop zooming that might currently be in progress from a situation change.
   if dynamicCamLoaded then
-    userSetShoulderOffset = cosFix.currentShoulderOffset
-    
-    -- Stop zooming that might be currently in progress from a situation change.
     DynamicCam.LibCamera:StopZooming(true)
   end
 
-  local modelFactor = cosFix:CorrectShoulderOffset(userSetShoulderOffset)
-
-  -- Zooming should always have the intended effect. For unknown model IDs we use the default 1.
-  if modelFactor == -1 then
-    modelFactor = 1
-  end
-
-  local correctedShoulderOffset = userSetShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * modelFactor
+  local correctedShoulderOffset = cosFix.currentShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(targetZoom) * cosFix.currentModelFactor
   CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
   return CosFix_OriginalCameraZoomOut(increments, automated)
@@ -168,7 +154,6 @@ function cosFix:OnInitialize()
   self:InitializeDatabase()
   self:InitializeOptions()
 
-  hooksecurefunc("SetCVar", CosFixSetCVar)
 end
 
 
@@ -195,7 +180,12 @@ function cosFix:OnEnable()
     self:ScheduleTimer("SetVariables", 0.1)
 
     self.currentShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
-    self.shoulderOffsetModelFactor = self:CorrectShoulderOffset(self.currentShoulderOffset)
+    local modelFactor = self:CorrectShoulderOffset()
+    if modelFactor == -1 then
+      self.currentModelFactor = 1
+    else
+      self.currentModelFactor = modelFactor
+    end
   end
 
 end
