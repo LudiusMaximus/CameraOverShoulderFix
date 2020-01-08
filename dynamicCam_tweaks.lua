@@ -135,7 +135,12 @@ if dynamicCamLoaded then
 
 
   -- Shut down DynamicCam before defining the duplicate functions and variables.
-  DynamicCam:Shutdown();
+  -- But do not use the actual DynamicCam:Shutdown() function, which will start another ApplyDefaultCameraSettings()
+  -- with a shoulder offset easing of 0.75 delay which we cannot stop!
+  DynamicCam:CancelAllTimers();
+  DynamicCam:UnregisterAllEvents();
+  DynamicCam:UnregisterAllMessages();
+  DynamicCam:ReactiveZoomOff();
 
 
 
@@ -625,6 +630,9 @@ if dynamicCamLoaded then
   DynamicCam.OnDisable = OnDisable
 
   local function Startup()
+
+      -- print("Startup()", GetTime())
+
       -- make sure that shortcuts have values
       if (not Options) then
           Options = DynamicCam.Options;
@@ -637,10 +645,10 @@ if dynamicCamLoaded then
       DynamicCam:RegisterMessage("DC_BASE_CAMERA_UPDATED");
 
       -- initial evaluate needs to be delayed because the camera doesn't like changing cvars on startup
-      DynamicCam:ScheduleTimer("ApplyDefaultCameraSettings", 2.5);
-      evaluateTimer = DynamicCam:ScheduleTimer("EvaluateSituations", 3);
-      DynamicCam:ScheduleTimer("RegisterEvents", 3);
-
+      DynamicCam:ScheduleTimer("ApplyDefaultCameraSettings", 0.1);
+      DynamicCam:ScheduleTimer("RegisterEvents", 0.1);
+      evaluateTimer = DynamicCam:ScheduleTimer("EvaluateSituations", 0.1);
+      
       -- turn on reactive zoom if it's enabled
       if (DynamicCam.db.profile.reactiveZoom.enabled) then
           DynamicCam:ReactiveZoomOn();
@@ -691,7 +699,7 @@ if dynamicCamLoaded then
 
   local function EvaluateSituations()
 
-      -- print("EvaluateSituations", GetTime())
+      -- print("EvaluateSituations", evaluateSituationsAfterStartup, GetTime())
 
       -- if we currently have timer running, kill it
       if (evaluateTimer) then
@@ -768,10 +776,12 @@ if dynamicCamLoaded then
               end
           end
       end
-      
+
       -- added cosFix code
       evaluateSituationsAfterStartup = true
 
+
+      -- print("Finished EvaluateSituations", evaluateSituationsAfterStartup, GetTime())
   end
   DynamicCam.EvaluateSituations = EvaluateSituations
 
@@ -796,7 +806,7 @@ if dynamicCamLoaded then
 
   local function EnterSituation(_, situationID, oldSituationID, skipZoom)
 
-      -- print("EnterSituation", GetTime())
+      -- print("EnterSituation", evaluateSituationsAfterStartup, GetTime())
 
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
@@ -1362,6 +1372,9 @@ if dynamicCamLoaded then
               end
           end
       end
+
+      -- print("Finished ApplyDefaultCameraSettings", newSituationID, GetTime())
+
   end
   DynamicCam.ApplyDefaultCameraSettings = ApplyDefaultCameraSettings
 
