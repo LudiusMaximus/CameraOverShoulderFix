@@ -225,13 +225,13 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     else
       local vehicleName = GetUnitName("vehicle", false)
       if vehicleName == nil then
-        self:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". Zoom in or out to get message including vehicle name!")
+        self:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". |cffff9900|HcosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       else
-        self:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known...")
+        self:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known. |cffff9900|HcosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       end
 
       -- Default for all unknown vehicles...
-      returnValue = 0.5
+      returnValue = 0
     end
 
 
@@ -302,9 +302,9 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
               returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
             else
               local creatureName = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
-              self:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known...")
+              self:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known. |cffff9900|HcosFix:mountId:".. mountId .."|h[Click here to define it!]|h|r")
               -- Default for all other mounts...
-              returnValue = mountedFactor * 6
+              returnValue = 0
             end
           end
         end
@@ -316,9 +316,10 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
           returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
         else
           local creatureName = C_MountJournal_GetMountInfoByID(mountId)
-          self:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known...")
+          self:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|HcosFix:mountId:".. mountId .."|h[Click here to define it!]|h|r")
+        
           -- Default for all other mounts...
-          returnValue = mountedFactor * 6
+          returnValue = 0
         end
       end
 

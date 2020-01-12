@@ -9,6 +9,26 @@ local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "A
 
 local _G = _G
 local pairs = _G.pairs
+local strsplit = _G.strsplit
+
+
+
+_G.CosFix_OriginalChatFrame_OnHyperlinkShow = _G.ChatFrame_OnHyperlinkShow
+
+function HyperlinkHandler(...)
+  local _, linkType = ...
+  local cosFixIdentifier, idType, id = strsplit(":", linkType)
+
+  if cosFixIdentifier == "cosFix" then
+
+    print("TODO: Open window to modify", idType, id)
+
+  else
+    CosFix_OriginalChatFrame_OnHyperlinkShow(...)
+  end
+end
+
+
 
 _G.CosFix_OriginalSetCVar = _G.SetCVar
 local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
@@ -27,7 +47,7 @@ local function CosFixSetCVar(...)
   local variable, value = ...
 
   if variable == "test_cameraOverShoulder" then
-  
+
     cosFix.currentShoulderOffset = value
 
     local modelFactor = cosFix:CorrectShoulderOffset()
@@ -66,17 +86,17 @@ if dynamicCamLoaded then
   if DynamicCam.db.profile.reactiveZoom.enabled then
     DynamicCam:ReactiveZoomOn()
   end
-  
+
 end
 
 
 
 -- Hooking functions for non-reactive zoom.
-local targetZoom;
+local targetZoom
 function CosFix_CameraZoomIn(increments, automated)
 
   -- print("CosFix_CameraZoomIn")
-  
+
   -- No idea, why WoW does in-out-in-out with increments 0
   -- after each mouse wheel turn.
   if increments == 0 then return end
@@ -157,6 +177,7 @@ function cosFix:OnInitialize()
 end
 
 
+
 function cosFix:OnEnable()
 
   -- Hide the Blizzard warning.
@@ -171,6 +192,7 @@ function cosFix:OnEnable()
 
   runhook = true
 
+  ChatFrame_OnHyperlinkShow = HyperlinkHandler
 
   self:RegisterEvents()
 
@@ -188,7 +210,9 @@ function cosFix:OnEnable()
     end
   end
 
+
 end
+
 
 
 function cosFix:OnDisable()
@@ -201,6 +225,7 @@ function cosFix:OnDisable()
   -- Cannot undo hooksecurefunc.
   runhook = false
 
+  ChatFrame_OnHyperlinkShow = CosFix_OriginalChatFrame_OnHyperlinkShow
 
   self:UnregisterAllEvents()
 
