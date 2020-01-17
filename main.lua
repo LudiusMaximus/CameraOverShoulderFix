@@ -10,7 +10,8 @@ local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "A
 local _G = _G
 local pairs = _G.pairs
 local strsplit = _G.strsplit
-
+local math_max = _G.math.max
+local math_min = _G.math.min
 
 
 _G.CosFix_OriginalChatFrame_OnHyperlinkShow = _G.ChatFrame_OnHyperlinkShow
@@ -95,13 +96,13 @@ end
 local targetZoom
 function CosFix_CameraZoomIn(increments, automated)
 
-  -- print("CosFix_CameraZoomIn")
+  -- print("CosFix_CameraZoomIn", increments)
 
   -- No idea, why WoW does in-out-in-out with increments 0
   -- after each mouse wheel turn.
   if increments == 0 then return end
 
-  local targetZoom = math.max(0, GetCameraZoom() - increments)
+  local targetZoom = math_max(0, GetCameraZoom() - increments)
 
   -- Stop zooming that might currently be in progress from a situation change.
   if dynamicCamLoaded then
@@ -116,13 +117,13 @@ end
 
 function CosFix_CameraZoomOut(increments, automated)
 
-  -- print("CosFix_CameraZoomOut")
+  -- print("CosFix_CameraZoomOut", increments)
 
   -- No idea, why WoW does in-out-in-out with increments 0
   -- after each mouse wheel turn.
   if increments == 0 then return end
 
-  targetZoom = math.min(39, GetCameraZoom() + increments)
+  targetZoom = math_min(39, GetCameraZoom() + increments)
 
   -- Stop zooming that might currently be in progress from a situation change.
   if dynamicCamLoaded then

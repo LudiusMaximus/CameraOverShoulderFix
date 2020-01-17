@@ -26,6 +26,7 @@ if dynamicCamLoaded then
   local oldCameraZoomOut = _G.CosFix_CameraZoomOut
 
   local GetCameraZoom = _G.GetCameraZoom
+  local GetFramerate = _G.GetFramerate
 
   local GetCVar = _G.GetCVar
   local ResetTestCvars = _G.ResetTestCvars
@@ -111,6 +112,10 @@ if dynamicCamLoaded then
   local evaluateSituationsAfterStartup = false
 
 
+  -- Use this variable to get the duration of the last frame.
+  -- This is more accurate than the game framerate, which has a certain inertia.
+  local timeOfLastFrame = GetTime()
+  local secondsPerFrame = 1.0/GetFramerate()
 
   -- This frame applies the new shoulder offset while easing of zoom or shoulder offset is in progress.
   -- The easing functions just modify the zoom or cosFix.currentShoulderOffsetand which is taken
@@ -118,11 +123,16 @@ if dynamicCamLoaded then
   local shoulderOffsetEasingFrame = CreateFrame("Frame")
   shoulderOffsetEasingFrame:SetScript("onUpdate", function(self, elapse)
 
+    -- Using this frame to log timeOfLastFrame.
+    local currentTime = GetTime()
+    secondsPerFrame = currentTime - timeOfLastFrame
+    timeOfLastFrame = currentTime
+
     if not LibCamera:ZoomInProgress() and not cosFix.easeShoulderOffsetInProgress then return end
 
     local correctedOffset = cosFix.currentShoulderOffset * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.currentModelFactor
 
-    -- print("shoulderOffsetEasingFrame setting", cosFix.currentShoulderOffset, GetCameraZoom())
+    -- print("shoulderOffsetEasingFrame", GetTime(), GetCameraZoom())
 
     -- Also check for nan (correctedOffset == correctedOffset).
     if correctedOffset and type(correctedOffset) == 'number' and correctedOffset == correctedOffset then
@@ -648,7 +658,7 @@ if dynamicCamLoaded then
       DynamicCam:ScheduleTimer("ApplyDefaultCameraSettings", 0.1);
       DynamicCam:ScheduleTimer("RegisterEvents", 0.1);
       evaluateTimer = DynamicCam:ScheduleTimer("EvaluateSituations", 0.1);
-      
+
       -- turn on reactive zoom if it's enabled
       if (DynamicCam.db.profile.reactiveZoom.enabled) then
           DynamicCam:ReactiveZoomOn();
@@ -1466,6 +1476,8 @@ if dynamicCamLoaded then
 
   local function ReactiveZoom(zoomIn, increments, automated)
 
+      -- print("---------------> ReactiveZoom", zoomIn, increments, automated)
+
       increments = increments or 1;
 
       if (not automated and increments == 1) then
@@ -1524,9 +1536,28 @@ if dynamicCamLoaded then
           -- get the current time to zoom if we were going linearly or use maxZoomTime, if that's too high
           local zoomTime = math_min(maxZoomTime, math_abs(targetZoom - currentZoom)/tonumber(GetCVar("cameraZoomSpeed")));
 
-          -- print("REACTIVE ZOOM start")
-          -- LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc], function() print("REACTIVE ZOOM end") end)
-          LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc])
+
+          ---------------------------------------------------------
+          -- Begin of added cosFix code ---------------------------
+          ---------------------------------------------------------
+          -- print ("Want to get from", currentZoom, "to", targetZoom, "in", zoomTime, "with one frame being",  secondsPerFrame)
+
+          if zoomTime < secondsPerFrame then
+            -- print("No easing for you", zoomTime, secondsPerFrame)
+            if (zoomIn) then
+              oldCameraZoomIn(increments, automated)
+            else
+              oldCameraZoomOut(increments, automated)
+            end
+          else
+
+            -- print("REACTIVE ZOOM start", GetTime())
+            -- LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc], function() print("REACTIVE ZOOM end", GetTime()) end)
+            LibCamera:SetZoom(targetZoom, zoomTime, LibEasing[easingFunc])
+          end
+          ---------------------------------------------------------
+          -- End of added cosFix code -----------------------------
+          ---------------------------------------------------------
 
 
       else
