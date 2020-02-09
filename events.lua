@@ -886,6 +886,8 @@ function cosFix:RegisterEvents()
   self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
 
 
+  -- Needed for automatic dismounting when pet battle starts.
+  self:RegisterEvent("PLAYER_CONTROL_LOST", "ShoulderOffsetEventHandler")
 
 
   -- Needed for mounting and entering taxis.
