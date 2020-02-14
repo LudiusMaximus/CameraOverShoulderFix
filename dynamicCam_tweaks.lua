@@ -816,18 +816,11 @@ if dynamicCamLoaded then
 
   local function EnterSituation(_, situationID, oldSituationID, skipZoom)
 
-      -- print("EnterSituation", evaluateSituationsAfterStartup, GetTime())
+      -- print("EnterSituation", evaluateSituationsAfterStartup, skipZoom, GetTime())
 
       ---------------------------------------------------------
       -- Begin of added cosFix code ---------------------------
       ---------------------------------------------------------
-      -- Necessary if you are entering a situation without zoom but with a view,
-      -- and the zoom easing of a previous situation change is still in progress.
-      -- E.g. stop NPC interacation and start it again right away.
-      if not skipZoom then
-        LibCamera:StopZooming()
-      end
-
       local noEasing = false
       if evaluateSituationsAfterStartup == false then
         evaluateSituationsAfterStartup = true
@@ -993,6 +986,16 @@ if dynamicCamLoaded then
   local function ExitSituation(_, situationID, newSituationID)
 
       -- print("ExitSituation", GetTime())
+      
+      ---------------------------------------------------------
+      -- Begin of added cosFix code ---------------------------
+      ---------------------------------------------------------
+      LibCamera:StopZooming()
+      ---------------------------------------------------------
+      -- End of added cosFix code -----------------------------
+      ---------------------------------------------------------
+      
+      
 
       local restoringZoom;
       local situation = DynamicCam.db.profile.situations[situationID];
