@@ -288,16 +288,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
   end
 
 
-  -- If no shoulder offset is set, we are done!
-  -- Here, we are checking userSetShoulderOffset instead of currentShoulderOffset,
-  -- because the latter my accidentally be 0 during an ongoing easing process.
-  -- But for UNIT_AURA we must actually continue here, because we may have entered
-  -- from a situation with shoulder offset into one without while dismounting at
-  -- the same time!
-  if self:GetUserSetShoulderOffset() == 0 and event ~= "UNIT_AURA" then
-    return
-  end
-
 
 
 

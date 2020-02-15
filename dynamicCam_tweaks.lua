@@ -1979,6 +1979,7 @@ end
 -- A function to get the current shoulder offset; either the global default
 -- or the one of the current situation
 -- or the one of the new situation we are about to enter.
+-- This is only used in ExitSituation().
 function cosFix:GetUserSetShoulderOffset(newSituationID)
 
   if dynamicCamLoaded then
