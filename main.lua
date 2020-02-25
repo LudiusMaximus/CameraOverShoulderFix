@@ -14,6 +14,10 @@ local math_max = _G.math.max
 local math_min = _G.math.min
 
 
+
+-- TODO: This gives a taint on ChatFrame_OnHyperlinkShow causing errors
+-- in combat lockdown. Find another way!!
+
 _G.CosFix_OriginalChatFrame_OnHyperlinkShow = _G.ChatFrame_OnHyperlinkShow
 
 function HyperlinkHandler(...)
