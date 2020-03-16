@@ -1,10 +1,10 @@
-## Interface: 80205
+## Interface: 80300
 ## Title: CameraOverShoulderFix
 ## Author: LudiusMaximus
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.
 ## SavedVariables: cosFixDB
 ## OptionalDeps: Ace3, DynamicCam
-## Version: Beta 1.0b1
+## Version: Alpha 1.0a2
 ## X-Donate: PayPal:ludiusmaximus@gmail.com
 ## X-License: The MIT License (MIT)
 
