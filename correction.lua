@@ -302,7 +302,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
               returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
             else
               local creatureName = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
-              self:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known. |cffff9900|HcosFix:mountId:".. mountId .."|h[Click here to define it!]|h|r")
+              self:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known. |cffff9900|HcosFix:mountId:".. self.db.char.lastActiveMount .."|h[Click here to define it!]|h|r")
               -- Default for all other mounts...
               returnValue = 0
             end
