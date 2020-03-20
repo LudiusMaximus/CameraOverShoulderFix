@@ -13,7 +13,7 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [921844]  = 1.38,   -- NightElf female            - 2019-12-29
   [900914]  = 1.392,  -- Gnome male                 - 2020-01-04
   [940356]  = 1.403,  -- Gnome female               - 2020-01-04
-  [1005887] = 0.98,   -- Draenei male
+  [1005887] = 0.962,  -- Draenei male               - 2020-03-17
   [1022598] = 1.28,   -- Draenei female             - 2020-01-01
   [307454]  = 0.94,   -- Worgen male
   [307453]  = 1.18,   -- Worgen female
@@ -21,12 +21,14 @@ cosFix.modelIdToShoulderOffsetFactor = {
   -- Alliance allied races
   [1734034] = 1.337,  -- VoidElf male               - 2020-01-03
   [1733758] = 1.41,   -- VoidElf female             - 2020-01-03
-  [1620605] = 0.98,   -- LightforgedDraenei male
-  [1593999] = 1.28,   -- LightforgedDraenei female  - 2020-01-01
-  [1890765] = 1.15,   -- DarkIronDwarf male
-  [1890763] = 1.428,  -- DarkIronDwarf female
-  [1721003] = 1.00,   -- KulTiran male
-  [1886724] = 1.21,   -- KulTiran female
+  [1620605] = 0.965,  -- LightforgedDraenei male    - 2020-03-16
+  [1593999] = 1.28,   -- LightforgedDraenei female  - 2020-03-16
+  [1890765] = 1.14,   -- DarkIronDwarf male         - 2020-03-16
+  [1890763] = 1.45,   -- DarkIronDwarf female       - 2020-03-16
+  [1721003] = 0.999,  -- KulTiran male              - 2020-03-17
+  [1886724] = 1.2,    -- KulTiran female            - 2020-03-17
+  [2622502] = 1.421,  -- Mechagnome male            - 2020-03-17
+  [2564806] = 1.453,  -- Mechagnome female          - 2020-03-17
 
   -- Horde core races
   [1968587] = 1.00,   -- (Maghar)Orc male (upright) - 2020-01-01
@@ -44,10 +46,10 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [119369]  = 1.3,    -- Goblin female              - 2020-01-02
 
   -- Horde allied races
-  [1814471] = 1.20,   -- Nightborne male
-  [1810676] = 1.38,   -- Nightborne female
-  [1630218] = 0.9,    -- HighmountainTauren male
-  [1630402] = 1.1,    -- HighmountainTauren female
+  [1814471] = 1.198,  -- Nightborne male            - 2020-03-17
+  [1810676] = 1.267,  -- Nightborne female          - 2020-03-17
+  [1630218] = 0.9,    -- HighmountainTauren male    - 2020-03-17
+  [1630402] = 1.1,    -- HighmountainTauren female  - 2020-03-17
                       -- MagharOrc male (same as Orc)
                       -- MagharOrc female (same as Orc)
   [1630447] = 1.05,   -- ZandalariTroll male

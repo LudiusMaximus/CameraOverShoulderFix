@@ -4,7 +4,7 @@
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.
 ## SavedVariables: cosFixDB
 ## OptionalDeps: Ace3, DynamicCam
-## Version: Alpha 1.0a2
+## Version: Alpha 1.0a3
 ## X-Donate: PayPal:ludiusmaximus@gmail.com
 ## X-License: The MIT License (MIT)
 
@@ -14,6 +14,8 @@ main.lua
 options.lua
 correction.lua
 events.lua
+
+setFactorFrame.lua
 
 factors_races.lua
 factors_shapeshift.lua

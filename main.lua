@@ -2,9 +2,9 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):NewAddon(folderName, "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0")
 
 
--- TODO: Build a frame to enter new model factors!
--- https://www.wowace.com/projects/ace3/pages/ace-db-3-0-tutorial
--- https://www.wowace.com/projects/ace3/pages/ace-gui-3-0-widgets
+-- Allow access for other addons.
+_G.cosFix = cosFix
+
 
 
 local _G = _G
@@ -14,37 +14,37 @@ local math_max = _G.math.max
 local math_min = _G.math.min
 
 
+_G.CosFix_OriginalSetCVar = _G.SetCVar
+local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
 
--- TODO: This gives a taint on ChatFrame_OnHyperlinkShow causing errors
--- in combat lockdown. Find another way!!
+local GetCameraZoom = _G.GetCameraZoom
+local GetTime = _G.GetTime
 
-_G.CosFix_OriginalChatFrame_OnHyperlinkShow = _G.ChatFrame_OnHyperlinkShow
+local DynamicCam = _G.DynamicCam
+local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
 
-function HyperlinkHandler(...)
+
+-- Needed if un-hooks without reloading are required.
+local runhook = false
+
+function cosFix.HyperlinkHandler(...)
+
+  if not runhook then return end
+
   local _, linkType = ...
-  local cosFixIdentifier, idType, id = strsplit(":", linkType)
+  local _, cosFixIdentifier, idType, id = strsplit(":", linkType)
 
   if cosFixIdentifier == "cosFix" then
-
-    print("TODO: Open window to modify", idType, id)
-
-  else
-    CosFix_OriginalChatFrame_OnHyperlinkShow(...)
+    -- No need to hide ItemRefTooltip, because it will not even show up with our modified link.
+    cosFix.setFactorFrame:SetId(idType, tonumber(id))
+    cosFix.setFactorFrame:Show()
   end
 end
 
 
 
-_G.CosFix_OriginalSetCVar = _G.SetCVar
-local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
-
-local GetCameraZoom = _G.GetCameraZoom
 
 
-local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
-local DynamicCam = _G.DynamicCam
-
-local runhook = true
 local function CosFixSetCVar(...)
 
   if not runhook then return end
@@ -168,7 +168,14 @@ function cosFix:DebugPrint(...)
   end
 end
 
-
+-- Only print this message once.
+local lastUnknownModelPrint = GetTime()
+function cosFix:DebugPrintUnknownModel(...)
+  if lastUnknownModelPrint < GetTime() then
+    self:DebugPrint(...)
+    lastUnknownModelPrint = GetTime()
+  end
+end
 
 
 function cosFix:OnInitialize()
@@ -195,9 +202,10 @@ function cosFix:OnEnable()
     self:NonReactiveZoomOn()
   end
 
-  runhook = true
+  hooksecurefunc(ItemRefTooltip, "SetHyperlink", cosFix.HyperlinkHandler)
 
-  ChatFrame_OnHyperlinkShow = HyperlinkHandler
+  -- Cannot undo hooksecurefunc.
+  runhook = true
 
   self:RegisterEvents()
 
@@ -215,7 +223,6 @@ function cosFix:OnEnable()
     end
   end
 
-
 end
 
 
@@ -230,8 +237,6 @@ function cosFix:OnDisable()
   -- Cannot undo hooksecurefunc.
   runhook = false
 
-  ChatFrame_OnHyperlinkShow = CosFix_OriginalChatFrame_OnHyperlinkShow
-
   self:UnregisterAllEvents()
 
   -- Restore all test variables and enable the Blizzard warning.
@@ -239,4 +244,6 @@ function cosFix:OnDisable()
   UIParent:RegisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
 
 end
+
+
 

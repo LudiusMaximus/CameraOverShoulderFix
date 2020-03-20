@@ -184,6 +184,7 @@ end
 --                            still return 'false' while the camera is already regarding the vehicle's model.
 function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
+  -- print("CorrectShoulderOffset")
 
   -- self.modelFrame:SetUnit("player")
   -- local modelId = self.modelFrame:GetModelFileID()
@@ -225,9 +226,9 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     else
       local vehicleName = GetUnitName("vehicle", false)
       if vehicleName == nil then
-        self:DebugPrint("Just entering unknown vehicle with ID " .. vehicleId .. ". |cffff9900|HcosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
+        self:DebugPrintUnknownModel("Just entering unknown vehicle with ID " .. vehicleId .. ". |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       else
-        self:DebugPrint("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known. |cffff9900|HcosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
+        self:DebugPrintUnknownModel("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       end
 
       -- Default for all unknown vehicles...
@@ -302,7 +303,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
               returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
             else
               local creatureName = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
-              self:DebugPrint("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known. |cffff9900|HcosFix:mountId:".. self.db.char.lastActiveMount .."|h[Click here to define it!]|h|r")
+              self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:" .. self.db.char.lastActiveMount .. "|h[Click here to define it!]|h|r")
               -- Default for all other mounts...
               returnValue = 0
             end
@@ -311,13 +312,20 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
       -- mountId not nil
       else
+
+        -- If the setFactorFrame is open for the current mount, use the currently set value.
+        local f = self.setFactorFrame
+        if f and f:IsShown() and f.idType == "mountId" and f.id == mountId then
+          return mountedFactor * f.offsetFactor
+        end
+
         -- Is the mount already in the code?
         if self.mountIdToShoulderOffsetFactor[mountId] then
           returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
         else
           local creatureName = C_MountJournal_GetMountInfoByID(mountId)
-          self:DebugPrint("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|HcosFix:mountId:".. mountId .."|h[Click here to define it!]|h|r")
-        
+          self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:".. mountId .. "|h[Click here to define it!]|h|r")
+
           -- Default for all other mounts...
           returnValue = 0
         end
