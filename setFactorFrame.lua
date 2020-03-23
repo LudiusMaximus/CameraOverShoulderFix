@@ -31,7 +31,7 @@ ButtonFrameTemplate_HidePortrait(f)
 
 f:SetFrameStrata("HIGH")
 
-f:SetWidth(400)
+f:SetWidth(430)
 f:SetHeight(200)
 
 f:SetMovable(true)
@@ -56,7 +56,7 @@ f.cancelButton:SetWidth(90)
 f.cancelButton:SetScript("OnClick", function()
     print("Cancel")
     f:Hide()
-	end)
+  end)
 
 f.resetButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
 f.resetButton:SetPoint("BOTTOM", 0, 4)
@@ -64,7 +64,7 @@ f.resetButton:SetText("Reset")
 f.resetButton:SetWidth(90)
 f.resetButton:SetScript("OnClick", function()
     print("Reset")
-	end)
+  end)
 
 f.saveButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
 f.saveButton:SetPoint("BOTTOMRIGHT", -1, 4)
@@ -72,7 +72,7 @@ f.saveButton:SetText("Save")
 f.saveButton:SetWidth(90)
 f.saveButton:SetScript("OnClick", function()
     print("Save")
-	end)
+  end)
 
 
 
@@ -102,13 +102,13 @@ f.coarseSlider:SetScript("OnValueChanged", function(self, value)
     f.offsetFactor = round(value, 1)
     f:RefreshLabels()
   end)
-f.coarseSlider:SetScript("OnEnter", function(self)
-    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:SetText("Coarse Tuning")
-  end)
-f.coarseSlider:SetScript("OnLeave", function(self)
-    GameTooltip:Hide()
-  end)
+-- f.coarseSlider:SetScript("OnEnter", function(self)
+    -- GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    -- GameTooltip:SetText("Coarse Tuning")
+  -- end)
+-- f.coarseSlider:SetScript("OnLeave", function(self)
+    -- GameTooltip:Hide()
+  -- end)
 
 
 
@@ -137,20 +137,20 @@ f.fineSlider:SetScript("OnValueChanged", function(self, value)
     end
     f:RefreshLabels()
   end)
-f.fineSlider:SetScript("OnEnter", function(self)
-    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:SetText("Fine Tuning")
-  end)
-f.fineSlider:SetScript("OnLeave", function(self)
-    GameTooltip:Hide()
-  end)
+-- f.fineSlider:SetScript("OnEnter", function(self)
+    -- GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+    -- GameTooltip:SetText("Fine Tuning")
+  -- end)
+-- f.fineSlider:SetScript("OnLeave", function(self)
+    -- GameTooltip:Hide()
+  -- end)
 
 
 
 
 
 f.valueBox = CreateFrame("EditBox", "cosFix_valueBox", f.Inset, "InputBoxTemplate")
-f.valueBox:SetPoint("TOPRIGHT", -12, -43)
+f.valueBox:SetPoint("TOPRIGHT", -24, -43)
 f.valueBox:SetFontObject(ChatFontNormal)
 f.valueBox:SetSize(50, 20)
 f.valueBox:SetMultiLine(false)
@@ -187,13 +187,13 @@ f.valueBox:SetScript("OnEnterPressed", function(self)
     f.offsetFactor = round(self.lastValidValue, 3)
     f:RefreshLabels()
   end)
-f.valueBox:SetScript("OnEnter", function(self)
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetText("Ultra Fine Tuning")
-  end)
-f.valueBox:SetScript("OnLeave", function(self)
-    GameTooltip:Hide()
-  end)
+-- f.valueBox:SetScript("OnEnter", function(self)
+    -- GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    -- GameTooltip:SetText("Ultra Fine Tuning")
+  -- end)
+-- f.valueBox:SetScript("OnLeave", function(self)
+    -- GameTooltip:Hide()
+  -- end)
 
 f.minusButton = CreateFrame("Button", nil, f.valueBox, "UIPanelButtonTemplate")
 f.minusButton:SetPoint("TOPLEFT", f.valueBox, "BOTTOMLEFT", -7, 0)
@@ -206,7 +206,7 @@ f.minusButton:SetScript("OnClick", function()
       f.offsetFactor = f.offsetFactor - 0.001
     end
     f:RefreshLabels()
-	end)
+  end)
 
 f.plusButton = CreateFrame("Button", nil, f.valueBox, "UIPanelButtonTemplate")
 f.plusButton:SetPoint("TOPRIGHT", f.valueBox, "BOTTOMRIGHT", 2, 0)
@@ -219,7 +219,7 @@ f.plusButton:SetScript("OnClick", function()
       f.offsetFactor = f.offsetFactor + 0.001
     end
     f:RefreshLabels()
-	end)
+  end)
 
 f.applyButton = CreateFrame("Button", nil, f.valueBox, "UIPanelButtonTemplate")
 f.applyButton:SetPoint("BOTTOM", f.valueBox, "TOP", -2, 0)
@@ -231,7 +231,19 @@ f.applyButton:SetScript("OnClick", function()
     end
     f.offsetFactor = round(f.valueBox.lastValidValue, 3)
     f:RefreshLabels()
-	end)
+  end)
+
+
+
+f.mountButton = CreateFrame("Button", nil, f.Inset, "UIPanelButtonTemplate")
+f.mountButton:SetPoint("TOPLEFT", 10, -43)
+f.mountButton:SetWidth(80)
+f.mountButton:SetScript("OnClick", function()
+    if f.idType == "mountId" then
+      C_MountJournal.SummonByID(f.id)
+    end
+  end)
+
 
 
 function f:RefreshButtons()
@@ -256,6 +268,14 @@ function f:RefreshButtons()
     end
 
   end
+
+
+  if f.idType == "mountId" and f.id == cosFix:GetCurrentMount() and IsMounted() then
+    f.mountButton:SetText("Dismount")
+  else
+    f.mountButton:SetText("Mount")
+  end
+
 end
 
 
@@ -271,9 +291,9 @@ f.instructionTextLabel:SetText("Mount and dismount repeatedly to find the ideal 
 f.mountNameLabel = f:CreateFontString(nil, "HIGH")
 f.mountNameLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 f.mountNameLabel:SetTextColor(1.0, 0.6, 0.0)
-f.mountNameLabel:SetPoint("TOPLEFT", f.Inset, "TOPLEFT", 6, -10)
+f.mountNameLabel:SetPoint("TOPLEFT", f.Inset, "TOPLEFT", 13, -10)
 f.mountNameLabel:SetPoint("TOPRIGHT", f.Inset, "TOPRIGHT", -6, -10)
-f.mountNameLabel:SetJustifyH("CENTER")
+f.mountNameLabel:SetJustifyH("LEFT")
 f.mountNameLabel:SetText("No mount or vehicle detected.")
 
 
@@ -372,10 +392,10 @@ local mountChangedFrame = CreateFrame("Frame")
 mountChangedFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
 
-  if IsMounted() then
-    if not UnitOnTaxi("player") then
-      f:SetId("mountId", cosFix:GetCurrentMount())
-    end
+  if IsMounted() and not UnitOnTaxi("player") then
+    f:SetId("mountId", cosFix:GetCurrentMount())
+  else
+    f:RefreshButtons()
   end
 
 end)
