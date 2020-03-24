@@ -2,7 +2,7 @@
 ## Title: CameraOverShoulderFix
 ## Author: LudiusMaximus
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.
-## SavedVariables: cosFixDB
+## SavedVariables: cosFixDB, customOffsetFactors
 ## OptionalDeps: Ace3, DynamicCam
 ## Version: Alpha 1.0a3
 ## X-Donate: PayPal:ludiusmaximus@gmail.com

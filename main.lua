@@ -186,6 +186,14 @@ function cosFix:OnInitialize()
   self:InitializeDatabase()
   self:InitializeOptions()
 
+  -- Initialize custom offset factors variable.
+  if not customOffsetFactors then
+    customOffsetFactors = {
+      mountId = {},
+      vehicleId = {},
+    }
+  end
+
 end
 
 
@@ -244,6 +252,15 @@ function cosFix:OnDisable()
   UIParent:RegisterEvent("EXPERIMENTAL_CVAR_CONFIRMATION_NEEDED")
 
 end
+
+
+
+
+
+
+
+
+
 
 
 

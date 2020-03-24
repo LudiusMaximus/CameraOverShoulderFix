@@ -49,7 +49,7 @@ function cosFix:GetCurrentMount()
     end
   end
 
-  -- This looks horribly ineffectice, but apparently there is no way of getting the
+  -- This looks horribly ineffective, but apparently there is no way of getting the
   -- currently active mount's id directly...
   for k, v in pairs (C_MountJournal_GetMountIDs()) do
 

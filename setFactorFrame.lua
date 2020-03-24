@@ -71,7 +71,18 @@ f.saveButton:SetPoint("BOTTOMRIGHT", -1, 4)
 f.saveButton:SetText("Save")
 f.saveButton:SetWidth(90)
 f.saveButton:SetScript("OnClick", function()
-    print("Save")
+
+    local gameAccountInfo = C_BattleNet.GetGameAccountInfoByGUID(UnitGUID("player"))
+    local playerName = gameAccountInfo.characterName.."-"..gameAccountInfo.realmName
+    local calendarTime = C_DateAndTime.GetCurrentCalendarTime()
+    local today = format("%02d-%02d-%d", calendarTime.year, calendarTime.month, calendarTime.monthDay)
+    local character = gameAccountInfo.raceName .. " " .. ((UnitSex("player") == 2) and "Male" or "Female")
+    customOffsetFactors[f.idType][f.id] = {
+      factor     = f.offsetFactor,
+      metaData   = f.mountName .. ";" .. today .. ";" .. playerName .. ";" .. character
+    }
+    
+    f.RefreshLabels()
   end)
 
 
@@ -144,8 +155,6 @@ f.fineSlider:SetScript("OnValueChanged", function(self, value)
 -- f.fineSlider:SetScript("OnLeave", function(self)
     -- GameTooltip:Hide()
   -- end)
-
-
 
 
 
@@ -234,7 +243,6 @@ f.applyButton:SetScript("OnClick", function()
   end)
 
 
-
 f.mountButton = CreateFrame("Button", nil, f.Inset, "UIPanelButtonTemplate")
 f.mountButton:SetPoint("TOPLEFT", 10, -43)
 f.mountButton:SetWidth(80)
@@ -243,7 +251,6 @@ f.mountButton:SetScript("OnClick", function()
       C_MountJournal.SummonByID(f.id)
     end
   end)
-
 
 
 function f:RefreshButtons()
@@ -298,7 +305,6 @@ f.mountNameLabel:SetText("No mount or vehicle detected.")
 
 
 function f:RefreshLabels()
-
   -- print("RefreshLabels", self.mountName, self.offsetFactor)
   -- print(self.coarseSlider:GetValue(), self.fineSlider:GetValue(), self.valueBox:GetText())
 
@@ -356,11 +362,9 @@ f:SetScript("OnShow", function(self)
 
 
 function f:SetId(idType, id)
-
   -- print("SetId", self.idType, idType, self.id, id)
 
   if self.idType == idType and self.id == id then return end
-
 
   self.idType = idType
   self.id = id
@@ -368,20 +372,16 @@ function f:SetId(idType, id)
   if idType == "vehicleId" then
     self.mountName = GetUnitName("vehicle", false)
 
-
   elseif idType == "mountId" then
     self.mountName = C_MountJournal_GetMountInfoByID(id)
-
     if cosFix.mountIdToShoulderOffsetFactor[id] then
       self.offsetFactor = cosFix.mountIdToShoulderOffsetFactor[id]
     else
       self.offsetFactor = 0
     end
-
   end
 
   self:RefreshLabels()
-
 end
 
 
