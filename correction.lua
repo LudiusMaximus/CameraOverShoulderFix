@@ -296,14 +296,22 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
           -- Should only happen when logging in mounted with a character after purging of SavedVariables.
           if self.db.char.lastActiveMount == nil then
             returnValue = mountedFactor * 6
+            
+            
           -- Use the last active mount.
           else
-            -- Is the mount already in the code?
-            if self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount] then
-              returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[self.db.char.lastActiveMount]
+          
+            mountId = self.db.char.lastActiveMount
+          
+            -- Do we have a custom factor for this mount?
+            if customOffsetFactors["mountId"][mountId] then
+              returnValue = mountedFactor * customOffsetFactors["mountId"][mountId]["factor"]
+            -- Do we have a hardcoded factor for this mount?
+            elseif self.mountIdToShoulderOffsetFactor[mountId] then
+              returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
             else
-              local creatureName = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
-              self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. self.db.char.lastActiveMount .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:" .. self.db.char.lastActiveMount .. "|h[Click here to define it!]|h|r")
+              local creatureName = C_MountJournal_GetMountInfoByID(mountId)
+              self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:" .. mountId .. "|h[Click here to define it!]|h|r")
               -- Default for all other mounts...
               returnValue = 0
             end
@@ -319,13 +327,17 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
           return mountedFactor * f.offsetFactor
         end
 
-        -- Is the mount already in the code?
-        if self.mountIdToShoulderOffsetFactor[mountId] then
+
+        -- TODO: Same code as above. Should be put into a function of its own!
+        -- Do we have a custom factor for this mount?
+        if customOffsetFactors["mountId"][mountId] then
+          returnValue = mountedFactor * customOffsetFactors["mountId"][mountId]["factor"]
+        -- Do we have a hardcoded factor for this mount?
+        elseif self.mountIdToShoulderOffsetFactor[mountId] then
           returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
         else
           local creatureName = C_MountJournal_GetMountInfoByID(mountId)
           self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:".. mountId .. "|h[Click here to define it!]|h|r")
-
           -- Default for all other mounts...
           returnValue = 0
         end
