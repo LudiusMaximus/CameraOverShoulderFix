@@ -223,6 +223,11 @@ function cosFix:OpenOptionsMenu()
 end
 
 
+function cosFix:OpenSetFactorFrame()
+  self.setFactorFrame:Show()
+end
+
+
 function cosFix:InitializeOptions()
 
   LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable(folderName, optionsTable)
@@ -232,6 +237,8 @@ function cosFix:InitializeOptions()
   self:RegisterChatCommand(folderName, "OpenOptionsMenu")
   self:RegisterChatCommand("cosfix", "OpenOptionsMenu")
   self:RegisterChatCommand("cf", "OpenOptionsMenu")
+  self:RegisterChatCommand("defineOffset", "OpenSetFactorFrame")
+  self:RegisterChatCommand("cfdo", "OpenSetFactorFrame")
 
 end
 

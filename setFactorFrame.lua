@@ -32,7 +32,7 @@ ButtonFrameTemplate_HidePortrait(f)
 f:SetFrameStrata("HIGH")
 
 f:SetWidth(430)
-f:SetHeight(200)
+f:SetHeight(215)
 
 f:SetMovable(true)
 f:EnableMouse(true)
@@ -49,29 +49,52 @@ _G[f:GetName().."TitleText"]:SetText("CameraOverShoulderFix - Set Offset Factor"
 
 
 
-f.cancelButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-f.cancelButton:SetPoint("BOTTOMLEFT", 1, 4)
-f.cancelButton:SetText("Cancel")
-f.cancelButton:SetWidth(90)
-f.cancelButton:SetScript("OnClick", function()
-    print("Cancel")
+f.closeButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+f.closeButton:SetPoint("BOTTOMRIGHT", -1, 4)
+f.closeButton:SetText("Close")
+f.closeButton:SetWidth(90)
+f.closeButton:SetScript("OnClick", function()
     f:Hide()
   end)
 
-f.resetButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-f.resetButton:SetPoint("BOTTOM", 0, 4)
-f.resetButton:SetText("Reset")
-f.resetButton:SetWidth(90)
-f.resetButton:SetScript("OnClick", function()
-    print("Reset")
+f.deleteButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+f.deleteButton:SetPoint("BOTTOMLEFT", 1, 4)
+f.deleteButton:SetText("Delete")
+f.deleteButton:SetWidth(90)
+f.deleteButton:SetScript("OnClick", function()
+    if customOffsetFactors[f.idType][f.id] then
+      customOffsetFactors[f.idType][f.id] = nil
+    end
+    f:SetId(f.idType, f.id)
+  end)
+f.deleteButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+    GameTooltip:SetText("Delete custom offset factor.")
+  end)
+f.deleteButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
   end)
 
+
+
 f.saveButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-f.saveButton:SetPoint("BOTTOMRIGHT", -1, 4)
+f.saveButton:SetPoint("BOTTOM", 0, 4)
 f.saveButton:SetText("Save")
 f.saveButton:SetWidth(90)
 f.saveButton:SetScript("OnClick", function()
 
+    -- Do not allow the same custom value as hardcoded value.
+    if f.idType == "vehicleId" then
+
+    elseif f.idType == "mountId" then
+      if cosFix.mountIdToShoulderOffsetFactor[f.id] and cosFix.mountIdToShoulderOffsetFactor[f.id] == f.offsetFactor then
+        customOffsetFactors[f.idType][f.id] = nil
+        f:SetId(f.idType, f.id)
+        return
+      end
+    end
+
+    -- Save the custom value.
     local gameAccountInfo = C_BattleNet.GetGameAccountInfoByGUID(UnitGUID("player"))
     local playerName = gameAccountInfo.characterName.."-"..gameAccountInfo.realmName
     local calendarTime = C_DateAndTime.GetCurrentCalendarTime()
@@ -81,10 +104,16 @@ f.saveButton:SetScript("OnClick", function()
       factor     = f.offsetFactor,
       metaData   = f.mountName .. ";" .. today .. ";" .. playerName .. ";" .. character
     }
-    
-    f.RefreshLabels()
-  end)
 
+    f:SetId(f.idType, f.id)
+  end)
+f.saveButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    GameTooltip:SetText("Save custom offset factor.")
+  end)
+f.saveButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+  end)
 
 
 f.coarseSlider = CreateFrame("Slider", "cosFix_coarseSlider", f.Inset, "OptionsSliderTemplate")
@@ -97,8 +126,8 @@ f.coarseSlider = CreateFrame("Slider", "cosFix_coarseSlider", f.Inset, "OptionsS
   -- insets = { left = 3, right = 3, top = 6, bottom = 6 }})
 -- s:SetOrientation('HORIZONTAL')
 
-f.coarseSlider:SetPoint("TOP", 0, -36)
-f.coarseSlider:SetWidth(200)
+f.coarseSlider:SetPoint("TOP", 10, -52)
+f.coarseSlider:SetWidth(220)
 f.coarseSlider:SetHeight(17)
 
 f.coarseSlider:SetMinMaxValues(0, maxFactor)
@@ -113,21 +142,13 @@ f.coarseSlider:SetScript("OnValueChanged", function(self, value)
     f.offsetFactor = round(value, 1)
     f:RefreshLabels()
   end)
--- f.coarseSlider:SetScript("OnEnter", function(self)
-    -- GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    -- GameTooltip:SetText("Coarse Tuning")
-  -- end)
--- f.coarseSlider:SetScript("OnLeave", function(self)
-    -- GameTooltip:Hide()
-  -- end)
-
 
 
 
 f.fineSlider = CreateFrame("Slider", "cosFix_fineSlider", f.coarseSlider, "OptionsSliderTemplate")
 
 f.fineSlider:SetPoint("TOP", 0, -35)
-f.fineSlider:SetWidth(200)
+f.fineSlider:SetWidth(220)
 f.fineSlider:SetHeight(17)
 
 f.fineSlider:SetMinMaxValues(-0.5, 0.5)
@@ -148,18 +169,11 @@ f.fineSlider:SetScript("OnValueChanged", function(self, value)
     end
     f:RefreshLabels()
   end)
--- f.fineSlider:SetScript("OnEnter", function(self)
-    -- GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-    -- GameTooltip:SetText("Fine Tuning")
-  -- end)
--- f.fineSlider:SetScript("OnLeave", function(self)
-    -- GameTooltip:Hide()
-  -- end)
 
 
 
 f.valueBox = CreateFrame("EditBox", "cosFix_valueBox", f.Inset, "InputBoxTemplate")
-f.valueBox:SetPoint("TOPRIGHT", -24, -43)
+f.valueBox:SetPoint("TOPRIGHT", -14, -54)
 f.valueBox:SetFontObject(ChatFontNormal)
 f.valueBox:SetSize(50, 20)
 f.valueBox:SetMultiLine(false)
@@ -167,7 +181,6 @@ f.valueBox:SetAutoFocus(false)
 
 f.valueBox.lastValidValue = nil
 f.valueBox:SetScript("OnTextChanged", function(self, ...)
-
     -- Prevent invalid entries in the text box.
     if self:GetText() ~= "" and (tonumber(self:GetText()) == nil or tonumber(self:GetText()) < 0) then
       local oldCursorPosition = self:GetCursorPosition()
@@ -179,7 +192,6 @@ f.valueBox:SetScript("OnTextChanged", function(self, ...)
     end
 
     f:RefreshButtons()
-
   end)
 f.valueBox:SetScript("OnTextSet", function(self)
     self.lastValidValue = tonumber(self:GetText())
@@ -196,13 +208,7 @@ f.valueBox:SetScript("OnEnterPressed", function(self)
     f.offsetFactor = round(self.lastValidValue, 3)
     f:RefreshLabels()
   end)
--- f.valueBox:SetScript("OnEnter", function(self)
-    -- GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    -- GameTooltip:SetText("Ultra Fine Tuning")
-  -- end)
--- f.valueBox:SetScript("OnLeave", function(self)
-    -- GameTooltip:Hide()
-  -- end)
+
 
 f.minusButton = CreateFrame("Button", nil, f.valueBox, "UIPanelButtonTemplate")
 f.minusButton:SetPoint("TOPLEFT", f.valueBox, "BOTTOMLEFT", -7, 0)
@@ -244,7 +250,7 @@ f.applyButton:SetScript("OnClick", function()
 
 
 f.mountButton = CreateFrame("Button", nil, f.Inset, "UIPanelButtonTemplate")
-f.mountButton:SetPoint("TOPLEFT", 10, -43)
+f.mountButton:SetPoint("TOPLEFT", 10, -54)
 f.mountButton:SetWidth(80)
 f.mountButton:SetScript("OnClick", function()
     if f.idType == "mountId" then
@@ -254,6 +260,27 @@ f.mountButton:SetScript("OnClick", function()
 
 
 function f:RefreshButtons()
+
+  if not self:IsShown() then return end
+  -- print("RefreshButtons")
+
+  if not self.id then
+    self.mountButton:Hide()
+    self.coarseSlider:Hide()
+    self.fineSlider:Hide()
+    self.valueBox:Hide()
+    self.applyButton:Hide()
+    self.minusButton:Hide()
+    self.plusButton:Hide()
+    return
+  else
+    self.mountButton:Show()
+    self.coarseSlider:Show()
+    self.fineSlider:Show()
+    self.valueBox:Show()
+    self.minusButton:Show()
+    self.plusButton:Show()
+  end
 
   if self.valueBox.lastValidValue ~= self.offsetFactor then
     self.applyButton:Show()
@@ -273,14 +300,31 @@ function f:RefreshButtons()
     else
       self.plusButton:Enable()
     end
+  end
 
+  if self.idType == "mountId" and self.id == cosFix:GetCurrentMount() and IsMounted() then
+    self.mountButton:SetText("Dismount")
+  else
+    self.mountButton:SetText("Mount")
   end
 
 
-  if f.idType == "mountId" and f.id == cosFix:GetCurrentMount() and IsMounted() then
-    f.mountButton:SetText("Dismount")
+  if customOffsetFactors[self.idType][self.id] then
+    self.deleteButton:Enable()
   else
-    f.mountButton:SetText("Mount")
+    self.deleteButton:Disable()
+  end
+
+  if customOffsetFactors[self.idType][self.id] then
+    if customOffsetFactors[self.idType][self.id]["factor"] ~= self.offsetFactor then
+      self.saveButton:Enable()
+    else
+      self.saveButton:Disable()
+    end
+  elseif not cosFix.mountIdToShoulderOffsetFactor[self.id] or cosFix.mountIdToShoulderOffsetFactor[self.id] ~= self.offsetFactor then
+    self.saveButton:Enable()
+  else
+    self.saveButton:Disable()
   end
 
 end
@@ -298,15 +342,29 @@ f.instructionTextLabel:SetText("Mount and dismount repeatedly to find the ideal 
 f.mountNameLabel = f:CreateFontString(nil, "HIGH")
 f.mountNameLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 f.mountNameLabel:SetTextColor(1.0, 0.6, 0.0)
-f.mountNameLabel:SetPoint("TOPLEFT", f.Inset, "TOPLEFT", 13, -10)
-f.mountNameLabel:SetPoint("TOPRIGHT", f.Inset, "TOPRIGHT", -6, -10)
+f.mountNameLabel:SetPoint("TOPLEFT", f.Inset, "TOPLEFT", 13, -14)
+f.mountNameLabel:SetPoint("TOPRIGHT", f.Inset, "TOPRIGHT", -6, -14)
 f.mountNameLabel:SetJustifyH("LEFT")
-f.mountNameLabel:SetText("No mount or vehicle detected.")
+
+f.storeStatusLabel = f:CreateFontString(nil, "HIGH")
+f.storeStatusLabel:SetFont("Fonts\\FRIZQT__.TTF", 10)
+f.storeStatusLabel:SetTextColor(0.2, 0.7, 1.0)
+f.storeStatusLabel:SetPoint("TOPLEFT", f.mountNameLabel, "BOTTOMLEFT", 0, -4)
+f.storeStatusLabel:SetJustifyH("LEFT")
 
 
 function f:RefreshLabels()
+
+  if not self:IsShown() then return end
+
   -- print("RefreshLabels", self.mountName, self.offsetFactor)
   -- print(self.coarseSlider:GetValue(), self.fineSlider:GetValue(), self.valueBox:GetText())
+
+  if not self.id then
+    self.mountNameLabel:SetText("No mount or vehicle selected.")
+    self.storeStatusLabel:SetText("")
+    return
+  end
 
   self.mountNameLabel:SetText(self.mountName)
 
@@ -314,14 +372,28 @@ function f:RefreshLabels()
     self.valueBox:SetText(self.offsetFactor)
   end
 
+  if self.idType == "vehicleId" then
+
+  elseif self.idType == "mountId" then
+    local storeStatus = ""
+    if customOffsetFactors[self.idType][self.id] then
+      storeStatus = "Custom factor ("..customOffsetFactors[self.idType][self.id]["factor"]..")"
+      if cosFix.mountIdToShoulderOffsetFactor[self.id] then
+        storeStatus = storeStatus .. " overriding hardcoded factor ("..cosFix.mountIdToShoulderOffsetFactor[self.id]..")"
+      end
+    elseif cosFix.mountIdToShoulderOffsetFactor[self.id] then
+      storeStatus = "Hardcoded factor ("..cosFix.mountIdToShoulderOffsetFactor[self.id]..")"
+    else
+      storeStatus = "No factor available"
+    end
+    self.storeStatusLabel:SetText(storeStatus..".")
+  end
+
   local roundedCoarseSlider = round(self.coarseSlider:GetValue(), 1)
-
   if self.offsetFactor < roundedCoarseSlider - 0.5 or self.offsetFactor > roundedCoarseSlider + 0.5 then
-
     local roundedOffsetFactor = round(self.offsetFactor, 1)
     self.coarseSlider:SetValue(roundedOffsetFactor)
     self.fineSlider:SetValue(self.offsetFactor - roundedOffsetFactor)
-
   else
     -- Only needed for the initial call!
     self.coarseSlider:SetValue(roundedCoarseSlider)
@@ -330,10 +402,7 @@ function f:RefreshLabels()
 
   self:RefreshButtons()
 
-  if cosFix.currentModelFactor ~= self.offsetFactor then
-    cosFix:setDelayedShoulderOffset()
-  end
-
+  cosFix:setDelayedShoulderOffset()
 end
 
 
@@ -355,16 +424,17 @@ f:SetScript("OnHide", function(self)
 
 
 f:SetScript("OnShow", function(self)
-    if cosFix.currentModelFactor ~= self.offsetFactor then
-      cosFix:setDelayedShoulderOffset()
+    if IsMounted() and not UnitOnTaxi("player") then
+      f:SetId("mountId", cosFix:GetCurrentMount())
     end
+
+    cosFix:setDelayedShoulderOffset()
+    self:RefreshLabels()
   end)
 
 
 function f:SetId(idType, id)
   -- print("SetId", self.idType, idType, self.id, id)
-
-  if self.idType == idType and self.id == id then return end
 
   self.idType = idType
   self.id = id
@@ -374,7 +444,9 @@ function f:SetId(idType, id)
 
   elseif idType == "mountId" then
     self.mountName = C_MountJournal_GetMountInfoByID(id)
-    if cosFix.mountIdToShoulderOffsetFactor[id] then
+    if customOffsetFactors[idType][id] then
+      self.offsetFactor = customOffsetFactors[idType][id]["factor"]
+    elseif cosFix.mountIdToShoulderOffsetFactor[id] then
       self.offsetFactor = cosFix.mountIdToShoulderOffsetFactor[id]
     else
       self.offsetFactor = 0
@@ -391,13 +463,12 @@ end
 local mountChangedFrame = CreateFrame("Frame")
 mountChangedFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
+  if not self:IsShown() then return end
 
   if IsMounted() and not UnitOnTaxi("player") then
     f:SetId("mountId", cosFix:GetCurrentMount())
   else
     f:RefreshButtons()
   end
-
 end)
-
 

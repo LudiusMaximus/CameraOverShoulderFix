@@ -36,8 +36,8 @@ function cosFix.HyperlinkHandler(...)
 
   if cosFixIdentifier == "cosFix" then
     -- No need to hide ItemRefTooltip, because it will not even show up with our modified link.
-    cosFix.setFactorFrame:SetId(idType, tonumber(id))
     cosFix.setFactorFrame:Show()
+    cosFix.setFactorFrame:SetId(idType, tonumber(id))
   end
 end
 
