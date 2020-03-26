@@ -7,6 +7,7 @@ local pairs = _G.pairs
 local tonumber = _G.tonumber
 
 local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
+local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
 
 local math_floor = _G.math.floor
 
@@ -44,7 +45,8 @@ f:SetClampedToScreen(true)
 tinsert(UISpecialFrames, "cosFix_SetFactorFrame")
 
 _G[f:GetName().."TitleText"]:SetText("CameraOverShoulderFix - Set Offset Factor")
-
+_G[f:GetName().."TitleText"]:ClearAllPoints()
+_G[f:GetName().."TitleText"]:SetPoint("TOPLEFT", 10, -6)
 
 
 
@@ -65,7 +67,7 @@ f.deleteButton:SetScript("OnClick", function()
     if customOffsetFactors[f.idType][f.id] then
       customOffsetFactors[f.idType][f.id] = nil
     end
-    f:SetId(f.idType, f.id)
+    f:SetId(f.idType, f.id, true)
   end)
 f.deleteButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
@@ -89,7 +91,7 @@ f.saveButton:SetScript("OnClick", function()
     elseif f.idType == "mountId" then
       if cosFix.mountIdToShoulderOffsetFactor[f.id] and cosFix.mountIdToShoulderOffsetFactor[f.id] == f.offsetFactor then
         customOffsetFactors[f.idType][f.id] = nil
-        f:SetId(f.idType, f.id)
+        f:SetId(f.idType, f.id, true)
         return
       end
     end
@@ -105,7 +107,7 @@ f.saveButton:SetScript("OnClick", function()
       metaData   = f.mountName .. ";" .. today .. ";" .. playerName .. ";" .. character
     }
 
-    f:SetId(f.idType, f.id)
+    f:SetId(f.idType, f.id, true)
   end)
 f.saveButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
@@ -114,6 +116,26 @@ f.saveButton:SetScript("OnEnter", function(self)
 f.saveButton:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
   end)
+
+
+
+
+f.exportButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+f.exportButton:SetPoint("TOPRIGHT", -20, 0)
+f.exportButton:SetText("Export")
+f.exportButton:SetWidth(70)
+f.exportButton:SetScript("OnClick", function()
+    print("Export")
+  end)
+f.exportButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:SetText("Export your custom factors to send\nthem to the addon developer!")
+  end)
+f.exportButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+  end)
+
+
 
 
 f.coarseSlider = CreateFrame("Slider", "cosFix_coarseSlider", f.Inset, "OptionsSliderTemplate")
@@ -257,6 +279,91 @@ f.mountButton:SetScript("OnClick", function()
       C_MountJournal.SummonByID(f.id)
     end
   end)
+
+
+
+
+f.prevMountButton = CreateFrame("Button", nil, f.Inset)
+f.prevMountButton:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
+f.prevMountButton:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down")
+f.prevMountButton:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled")
+f.prevMountButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+f.prevMountButton:SetSize(25, 25)
+f.prevMountButton:SetPoint("TOPRIGHT", -67, -10)
+f.prevMountButton:SetScript("OnClick", function()
+    print("prevMountButton")
+  end)
+f.prevMountButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:SetText("Previous usable mount.")
+  end)
+f.prevMountButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+  end)
+
+f.nextMountButton = CreateFrame("Button", nil, f.Inset)
+f.nextMountButton:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+f.nextMountButton:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
+f.nextMountButton:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled")
+f.nextMountButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+f.nextMountButton:SetSize(25, 25)
+f.nextMountButton:SetPoint("TOPLEFT", f.prevMountButton, "TOPRIGHT", 0, 0)
+f.nextMountButton:SetScript("OnClick", function()
+    print("nextMountButton")
+
+    -- -- Make a list of usable mounts and count the entries to enable circular traversal.
+    -- local usableMounts = {}
+    -- for k, v in pairs (C_MountJournal_GetMountIDs()) do
+      -- local _, _, _, _, isUsable = C_MountJournal_GetMountInfoByID(v)
+      -- if isUsable then
+
+        -- -- If no mount is selected take the first mount.
+        -- if f.idType ~= "mountId" or not f.id then
+          -- f:SetId("mountId", v)
+          -- return
+        -- end
+
+
+
+        -- print(creatureName, v)
+
+      -- end
+    -- end
+
+
+  end)
+f.nextMountButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:SetText("Next usable mount.")
+  end)
+f.nextMountButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+  end)
+
+
+f.nextUnknownMountButton = CreateFrame("Button", nil, f.Inset)
+f.nextUnknownMountButton:SetNormalAtlas("QuestCollapse-Show-Up")
+f.nextUnknownMountButton:SetPushedAtlas("QuestCollapse-Show-Down")
+f.nextUnknownMountButton:SetDisabledAtlas("QuestCollapse-Show-Up")
+f.nextUnknownMountButton:GetDisabledTexture():SetDesaturated(true)
+f.nextUnknownMountButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+-- left 0, right 1, top 0, bottom 1 are the default values.
+-- Increasing leads to left/right moving to the left.
+-- Increasing leads to top/bottom moving to the bottom.
+f.nextUnknownMountButton:GetHighlightTexture():SetTexCoord(0.15, 0.85, 0.15, 0.85)
+f.nextUnknownMountButton:SetSize(21, 21)
+f.nextUnknownMountButton:SetPoint("LEFT", f.nextMountButton, "RIGHT", 7, 0)
+f.nextUnknownMountButton:SetScript("OnClick", function()
+    print("nextUnknownMountButton")
+  end)
+f.nextUnknownMountButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP", 0, 2)
+    GameTooltip:SetText("Next mount without factor.")
+  end)
+f.nextUnknownMountButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+  end)
+
 
 
 function f:RefreshButtons()
@@ -425,7 +532,7 @@ f:SetScript("OnHide", function(self)
 
 f:SetScript("OnShow", function(self)
     if IsMounted() and not UnitOnTaxi("player") then
-      f:SetId("mountId", cosFix:GetCurrentMount())
+      f:SetId("mountId", cosFix:GetCurrentMount(), true)
     end
 
     cosFix:setDelayedShoulderOffset()
@@ -433,8 +540,10 @@ f:SetScript("OnShow", function(self)
   end)
 
 
-function f:SetId(idType, id)
+function f:SetId(idType, id, reset)
   -- print("SetId", self.idType, idType, self.id, id)
+
+  if not reset and self.idType == idType and self.id == id then return end
 
   self.idType = idType
   self.id = id
@@ -455,8 +564,6 @@ function f:SetId(idType, id)
 
   self:RefreshLabels()
 end
-
-
 
 
 
