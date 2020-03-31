@@ -238,7 +238,7 @@ function cosFix:InitializeOptions()
   self:RegisterChatCommand("cosfix", "OpenOptionsMenu")
   self:RegisterChatCommand("cf", "OpenOptionsMenu")
   self:RegisterChatCommand("defineOffset", "OpenSetFactorFrame")
-  self:RegisterChatCommand("cfdo", "OpenSetFactorFrame")
+  self:RegisterChatCommand("cfsf", "OpenSetFactorFrame")
 
 end
 

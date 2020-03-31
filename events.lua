@@ -682,9 +682,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
   -- Needed for mounting and entering taxis.
   elseif event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
-    if IsMounted() == false then
+    if not IsMounted() then
 
-      -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == false")
+      -- print("PLAYER_MOUNT_DISPLAY_CHANGED: Not Mounted")
 
       -- Sometimes there is no UNIT_AURA after leaving a taxi.
       -- We can then set the value unmounted immedeately.
@@ -744,7 +744,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
     else
-      -- print("PLAYER_MOUNT_DISPLAY_CHANGED: IsMounted() == true")
+      -- print("PLAYER_MOUNT_DISPLAY_CHANGED: Mounted")
       return self:setDelayedShoulderOffset()
 
     end
