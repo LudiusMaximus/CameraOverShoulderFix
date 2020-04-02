@@ -2,13 +2,6 @@ local folderName = ...
 local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
-local _G = _G
-local pairs = _G.pairs
-local tonumber = _G.tonumber
-
-local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
-local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
-local PlaySound = _G.PlaySound
 
 local math_floor = _G.math.floor
 
@@ -17,11 +10,44 @@ local function round(num, numDecimalPlaces)
   return math_floor(num * mult + 0.5) / mult;
 end
 
+cosFix.vehicleIdToName = {}
+local mutex = false
+local function StoreVehicleIdToName(unit)
+  if unit ~= "vehicle" or mutex then return end
+  
+  mutex = true
+  local vehicleGUID = UnitGUID("vehicle")
+  mutex = false
+  
+  if not vehicleGUID then return end
+  
+  local _, _, _, _, _, vehicleId = strsplit("-", vehicleGUID)
+  mutex = true
+  cosFix.vehicleIdToName[tonumber(vehicleId)] = GetUnitName("vehicle", false)
+  mutex = false
+end
+hooksecurefunc("UnitGUID", StoreVehicleIdToName)
+hooksecurefunc("UnitName", StoreVehicleIdToName)
+
+
+local _G = _G
+local pairs = _G.pairs
+local tonumber = _G.tonumber
+
+local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
+local C_MountJournal_GetMountIDs      = _G.C_MountJournal.GetMountIDs
+local UnitInVehicle = _G.UnitInVehicle
+local UnitGUID      = _G.UnitGUID
+local GetUnitName   = _G.GetUnitName
+local PlaySound     = _G.PlaySound
+
+
+
 
 local maxFactor = 10
 
 
-cosFix.setFactorFrame = CreateFrame("Frame", "cosFix_SetFactorFrame", UIparent, "ButtonFrameTemplate")
+cosFix.setFactorFrame = CreateFrame("Frame", "cosFix_SetFactorFrame", UIParent, "ButtonFrameTemplate")
 local f = cosFix.setFactorFrame
 f:SetPoint("TOPLEFT")
 ButtonFrameTemplate_HidePortrait(f)
@@ -103,14 +129,16 @@ f.saveButton:SetText("Save")
 f.saveButton:SetWidth(90)
 f.saveButton:SetScript("OnClick", function()
     -- Do not allow the same custom value as hardcoded value.
-    if f.idType == "vehicleId" then
-
-    elseif f.idType == "mountId" then
+    if f.idType == "mountId" then
       if cosFix.mountIdToShoulderOffsetFactor[f.id] and cosFix.mountIdToShoulderOffsetFactor[f.id] == f.offsetFactor then
         customOffsetFactors[f.idType][f.id] = nil
         f:SetId(f.idType, f.id, true)
         return
       end
+    elseif f.idType == "vehicleId" then
+      print("TODO")
+    else
+      return
     end
 
     -- Save the custom value.
@@ -289,19 +317,28 @@ f.okButton:SetScript("OnClick", function()
 f.mountButton = CreateFrame("CheckButton", nil, f.Inset)
 f.mountButton:SetPoint("TOPLEFT", 20, -62)
 f.mountButton:SetSize(50, 50)
+-- The normal texture will be set when the mount is set.
+-- (SetNormalTexture() does not work here, as it will be replaced by the PushedTexture.)
+-- https://www.wowinterface.com/forums/showthread.php?t=57901
+f.mountButton.normalTexture = f.mountButton:CreateTexture()
+f.mountButton.normalTexture:SetAllPoints()
+f.mountButton.normalTexture:SetDrawLayer("BACKGROUND", 0)
 f.mountButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+f.mountButton:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
 f.mountButton:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
 f.mountButton:SetScript("OnClick", function(self)
     C_MountJournal.SummonByID(f.id)
-    _, _, _, _, _, _, _, _, spellId = UnitCastingInfo("player")
-    if spellId then
-      if spellId == f.mountSpellId then
+    self:SetConditionalChecked()
+  end)
+  
+function f.mountButton:SetConditionalChecked()
+      _, _, _, _, _, _, _, _, spellId = UnitCastingInfo("player")
+      if (IsMounted() and f.id == cosFix:GetCurrentMount()) or (spellId and spellId == f.mountSpellId) then
         self:SetChecked(true)
       else
         self:SetChecked(false)
       end
     end
-  end)
 
 
 f.prevMountButton = CreateFrame("Button", nil, f.Inset)
@@ -506,16 +543,16 @@ function f:RefreshButtons()
 
   if self.idType == "mountId" then
     self.mountButton:Show()
-    self.mountButton:SetNormalTexture(self.mountIcon)
-
-    _, _, _, _, _, _, _, _, spellId = UnitCastingInfo("player")
-    if (IsMounted() and self.id == cosFix:GetCurrentMount()) or (spellId and spellId == self.mountSpellId) then
-      self.mountButton:SetChecked(true)
-    else
-      self.mountButton:SetChecked(false)
-    end
-  else
+    self.mountButton.normalTexture:SetTexture(self.mountIcon)
+   
+    self.mountButton:SetConditionalChecked()
+    
+  elseif self.idType == "vehicleId" then
     self.mountButton:Hide()
+    
+    print("TODO: Show Vehicle Button")
+  else
+    return
   end
 
 
@@ -589,9 +626,8 @@ function f:RefreshLabels()
     self.valueBox:SetText(self.offsetFactor)
   end
 
-  if self.idType == "vehicleId" then
 
-  elseif self.idType == "mountId" then
+  if self.idType == "mountId" then
     local storeStatus = ""
     if customOffsetFactors[self.idType][self.id] then
       storeStatus = "Custom factor ("..customOffsetFactors[self.idType][self.id]["factor"]..")"
@@ -604,6 +640,13 @@ function f:RefreshLabels()
       storeStatus = "No factor available"
     end
     self.storeStatusLabel:SetText(storeStatus..".")
+    
+  elseif self.idType == "vehicleId" then
+  
+  
+    print("TODO: Check store status for vehicle")
+  else
+    return
   end
 
   -- Got to remember the original offsetFactor, because when we do coarseSlider:SetValue() it
@@ -657,6 +700,9 @@ f:SetScript("OnShow", function(self)
 
     if IsMounted() and not UnitOnTaxi("player") then
       f:SetId("mountId", cosFix:GetCurrentMount(), true)
+    elseif UnitInVehicle("player") then
+      local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
+      f:SetId("vehicleId", tonumber(vehicleId))
     end
 
     cosFix:setDelayedShoulderOffset()
@@ -668,15 +714,15 @@ f:SetScript("OnShow", function(self)
 function f:SetId(idType, id, reset)
   -- print("SetId", self.idType, idType, self.id, id)
 
-  if not reset and self.idType == idType and self.id == id then return end
+  if not reset and self.idType == idType and self.id == id and self.mountName ~= "" then
+    return
+  end
 
   self.idType = idType
   self.id = id
 
-  if idType == "vehicleId" then
-    self.mountName = GetUnitName("vehicle", false)
-
-  elseif idType == "mountId" then
+  
+  if idType == "mountId" then
     self.mountName, self.mountSpellId, self.mountIcon = C_MountJournal_GetMountInfoByID(id)
 
     if customOffsetFactors[idType][id] then
@@ -686,6 +732,22 @@ function f:SetId(idType, id, reset)
     else
       self.offsetFactor = 0
     end
+    
+  elseif idType == "vehicleId" then
+    
+    -- If we are currently in a vehicle, call UnitGUID()
+    -- which will also store the vehicle name in vehicleIdToName.
+    if UnitInVehicle("player") then UnitGUID("vehicle") end
+    if cosFix.vehicleIdToName[id] then
+      self.mountName = cosFix.vehicleIdToName[id]
+    else
+      self.mountName = ""
+    end
+    
+    print("TODO: Get hardcoded or custom vehicle offset", self.mountName)
+    self.offsetFactor = 0
+  else
+    return
   end
 
   self:PrepareMountSelectButtons()
@@ -697,15 +759,31 @@ end
 local mountChangedFrame = CreateFrame("Frame")
 mountChangedFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_START")
+mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_FAILED")
 mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+mountChangedFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
 mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
   if not self:IsShown() then return end
 
-  if event == "PLAYER_MOUNT_DISPLAY_CHANGED" and IsMounted() and not UnitOnTaxi("player") then
-    f:SetId("mountId", cosFix:GetCurrentMount())
+  if event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
+    if IsMounted() and not UnitOnTaxi("player") then
+      f:SetId("mountId", cosFix:GetCurrentMount())
+      return
+    end
   else
     local unit = ...
-    if unit ~= "player" then return end
+    if unit ~= "player" then
+      return
+    end
+  end
+  
+  if event == "UNIT_ENTERED_VEHICLE" then
+  
+    -- TODO take name!
+  
+    local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
+    f:SetId("vehicleId", tonumber(vehicleId))
+    return
   end
 
   f:RefreshButtons()
@@ -721,4 +799,20 @@ end)
   -- f:Hide()
   -- f:Show()
 -- end)
+
+
+
+
+-- CanExitVehicle()
+-- VehicleExit()
+
+
+
+-- "Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up"
+-- "Interface\\Vehicles\\UI-Vehicles-Button-Exit-Down"
+-- "Interface\\Buttons\\ButtonHilight-Square"
+
+
+
+
 

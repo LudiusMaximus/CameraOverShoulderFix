@@ -206,10 +206,10 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     local vehicleGuid = ""
     if enteringVehicleGuid then
       vehicleGuid = enteringVehicleGuid
-      -- print("Entering vehicle.")
+      -- print("Entering vehicle.", enteringVehicleGuid)
     else
       vehicleGuid = UnitGUID("vehicle")
-      -- print("Already in vehicle.")
+      -- print("Already in vehicle.", vehicleGuid)
     end
 
     -- TODO: Could also be "Player-...." if you mount a player in druid travel form.
@@ -224,9 +224,9 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     if self.vehicleIdToShoulderOffsetFactor[vehicleId] then
       returnValue = self.vehicleIdToShoulderOffsetFactor[vehicleId]
     else
-      local vehicleName = GetUnitName("vehicle", false)
-      if vehicleName == nil then
-        self:DebugPrintUnknownModel("Just entering unknown vehicle with ID " .. vehicleId .. ". |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
+      local vehicleName = GetUnitName("vehicle", false) or cosFix.vehicleIdToName[vehicleId]
+      if not vehicleName then
+        self:DebugPrintUnknownModel("Vehicle with ID " .. vehicleId .. " not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       else
         self:DebugPrintUnknownModel("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       end
