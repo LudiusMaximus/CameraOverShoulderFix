@@ -14,13 +14,13 @@ cosFix.vehicleIdToName = {}
 local mutex = false
 local function StoreVehicleIdToName(unit)
   if unit ~= "vehicle" or mutex then return end
-  
+
   mutex = true
   local vehicleGUID = UnitGUID("vehicle")
   mutex = false
-  
+
   if not vehicleGUID then return end
-  
+
   local _, _, _, _, _, vehicleId = strsplit("-", vehicleGUID)
   mutex = true
   cosFix.vehicleIdToName[tonumber(vehicleId)] = GetUnitName("vehicle", false)
@@ -34,12 +34,22 @@ local _G = _G
 local pairs = _G.pairs
 local tonumber = _G.tonumber
 
+local ButtonFrameTemplate_HidePortrait = _G.ButtonFrameTemplate_HidePortrait
 local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local C_MountJournal_GetMountIDs      = _G.C_MountJournal.GetMountIDs
-local UnitInVehicle = _G.UnitInVehicle
-local UnitGUID      = _G.UnitGUID
-local GetUnitName   = _G.GetUnitName
-local PlaySound     = _G.PlaySound
+local C_MountJournal_SummonByID       = _G.C_MountJournal.SummonByID
+
+local CanExitVehicle = _G.CanExitVehicle
+local CreateFrame    = _G.CreateFrame
+local GameTooltip    = _G.GameTooltip
+local GetUnitName    = _G.GetUnitName
+local IsMounted      = _G.IsMounted
+local PlaySound      = _G.PlaySound
+local UnitInVehicle  = _G.UnitInVehicle
+local UnitGUID       = _G.UnitGUID
+local UnitOnTaxi     = _G.UnitOnTaxi
+local VehicleExit    = _G.VehicleExit
+
 
 
 
@@ -64,6 +74,7 @@ f:SetScript("OnDragStart", f.StartMoving)
 f:SetScript("OnDragStop", f.StopMovingOrSizing)
 f:SetClampedToScreen(true)
 tinsert(UISpecialFrames, "cosFix_SetFactorFrame")
+f:Hide()
 _G[f:GetName().."TitleText"]:SetText("CameraOverShoulderFix - Set Offset Factor")
 _G[f:GetName().."TitleText"]:ClearAllPoints()
 _G[f:GetName().."TitleText"]:SetPoint("TOPLEFT", 10, -6)
@@ -129,15 +140,9 @@ f.saveButton:SetText("Save")
 f.saveButton:SetWidth(90)
 f.saveButton:SetScript("OnClick", function()
     -- Do not allow the same custom value as hardcoded value.
-    if f.idType == "mountId" then
-      if cosFix.mountIdToShoulderOffsetFactor[f.id] and cosFix.mountIdToShoulderOffsetFactor[f.id] == f.offsetFactor then
-        customOffsetFactors[f.idType][f.id] = nil
-        f:SetId(f.idType, f.id, true)
-        return
-      end
-    elseif f.idType == "vehicleId" then
-      print("TODO")
-    else
+    if cosFix.hardcodedOffsetFactors[f.idType][f.id] and cosFix.hardcodedOffsetFactors[f.idType][f.id] == f.offsetFactor then
+      customOffsetFactors[f.idType][f.id] = nil
+      f:SetId(f.idType, f.id, true)
       return
     end
 
@@ -169,7 +174,7 @@ f.exportButton:SetPoint("TOPRIGHT", -25, 0)
 f.exportButton:SetText("Export")
 f.exportButton:SetWidth(70)
 f.exportButton:SetScript("OnClick", function()
-    print("Export")
+    print("TODO: Export")
   end)
 f.exportButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -254,7 +259,6 @@ f.valueBox:SetScript("OnTextChanged", function(self, ...)
     else
       self.lastValidValue = tonumber(self:GetText())
     end
-
     f:RefreshButtons()
   end)
 f.valueBox:SetScript("OnTextSet", function(self)
@@ -327,18 +331,31 @@ f.mountButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 f.mountButton:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
 f.mountButton:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
 f.mountButton:SetScript("OnClick", function(self)
-    C_MountJournal.SummonByID(f.id)
-    self:SetConditionalChecked()
+    C_MountJournal_SummonByID(f.id)
+    f:RefreshButtons()
   end)
-  
-function f.mountButton:SetConditionalChecked()
-      _, _, _, _, _, _, _, _, spellId = UnitCastingInfo("player")
-      if (IsMounted() and f.id == cosFix:GetCurrentMount()) or (spellId and spellId == f.mountSpellId) then
-        self:SetChecked(true)
-      else
-        self:SetChecked(false)
-      end
-    end
+
+
+
+f.vehicleButton = CreateFrame("Button", nil, f.Inset)
+f.vehicleButton:SetPoint("TOPLEFT", 20, -62)
+f.vehicleButton:SetSize(50, 50)
+f.vehicleButton:SetNormalTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up")
+f.vehicleButton:SetDisabledTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up")
+f.vehicleButton:GetDisabledTexture():SetDesaturated(true)
+f.vehicleButton:SetPushedTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Down")
+f.vehicleButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+
+local L, R, T, B = 0.15, 0.85, 0.15, 0.85
+f.vehicleButton:GetNormalTexture():SetTexCoord(L, R, T, B )
+f.vehicleButton:GetDisabledTexture():SetTexCoord(L, R, T, B )
+f.vehicleButton:GetPushedTexture():SetTexCoord(L, R, T, B )
+
+f.vehicleButton:SetScript("OnClick", function(self)
+    VehicleExit()
+    f:RefreshButtons()
+  end)
+
 
 
 f.prevMountButton = CreateFrame("Button", nil, f.Inset)
@@ -443,30 +460,19 @@ function f:PrepareMountSelectButtons()
 
       if not firstMountId then firstMountId = v end
 
-      -- If no mount is selected, take the first usable mounts.
-      if f.idType ~= "mountId" or not f.id then
-        if not f.nextMountId then f.nextMountId = v end
-        if not f.prevMountId then f.prevMountId = v end
+      if takeNext and not f.nextMountId then f.nextMountId = v end
 
-        if not customOffsetFactors["mountId"][v] and not cosFix.mountIdToShoulderOffsetFactor[v] then
-          f.nextUnknownMountId = v
-        end
-
-      else
-        if takeNext and not f.nextMountId then f.nextMountId = v end
-
-        if not customOffsetFactors["mountId"][v] and not cosFix.mountIdToShoulderOffsetFactor[v] then
-          if not firstUnknownMountId then firstUnknownMountId = v end
-          if takeNext and not f.nextUnknownMountId then f.nextUnknownMountId = v end
-        end
-
-        if f.id == v then
-          takeNext = true
-          if lastMountId then f.prevMountId = lastMountId end
-        end
-
-        lastMountId = v
+      if not customOffsetFactors["mountId"][v] and not cosFix.hardcodedOffsetFactors["mountId"][v] then
+        if not firstUnknownMountId then firstUnknownMountId = v end
+        if takeNext and not f.nextUnknownMountId then f.nextUnknownMountId = v end
       end
+
+      if f.id == v then
+        takeNext = true
+        if lastMountId then f.prevMountId = lastMountId end
+      end
+
+      lastMountId = v
     end
 
     -- If we have all, we are done!
@@ -504,15 +510,18 @@ function f:RefreshButtons()
 
   if not self.id then
     self.mountButton:Hide()
+    self.vehicleButton:Hide()
     self.coarseSlider:Hide()
     self.fineSlider:Hide()
     self.valueBox:Hide()
     self.okButton:Hide()
     self.minusButton:Hide()
     self.plusButton:Hide()
+    self.deleteButton:Disable()
+    self.resetButton:Disable()
+    self.saveButton:Disable()
     return
   else
-    self.mountButton:Show()
     self.coarseSlider:Show()
     self.fineSlider:Show()
     self.valueBox:Show()
@@ -542,15 +551,29 @@ function f:RefreshButtons()
 
 
   if self.idType == "mountId" then
+    self.vehicleButton:Hide()
     self.mountButton:Show()
     self.mountButton.normalTexture:SetTexture(self.mountIcon)
-   
-    self.mountButton:SetConditionalChecked()
-    
+
+    -- Set the checked status!
+    _, _, _, _, _, _, _, _, spellId = UnitCastingInfo("player")
+    if (IsMounted() and f.id == cosFix:GetCurrentMount()) or (spellId and spellId == f.mountSpellId) then
+      self.mountButton:SetChecked(true)
+    else
+      self.mountButton:SetChecked(false)
+    end
+
   elseif self.idType == "vehicleId" then
     self.mountButton:Hide()
-    
-    print("TODO: Show Vehicle Button")
+    self.vehicleButton:Show()
+
+    -- Set the enabled status!
+    if CanExitVehicle() then
+      self.vehicleButton:Enable()
+    else
+      self.vehicleButton:Disable()
+    end
+
   else
     return
   end
@@ -570,8 +593,8 @@ function f:RefreshButtons()
       self.saveButton:Disable()
       self.resetButton:Disable()
     end
-  elseif (not cosFix.mountIdToShoulderOffsetFactor[self.id] and self.offsetFactor ~= 0) or
-         (    cosFix.mountIdToShoulderOffsetFactor[self.id] and self.offsetFactor ~= cosFix.mountIdToShoulderOffsetFactor[self.id]) then
+  elseif (not cosFix.hardcodedOffsetFactors[self.idType][self.id] and self.offsetFactor ~= 0) or
+         (    cosFix.hardcodedOffsetFactors[self.idType][self.id] and self.offsetFactor ~= cosFix.hardcodedOffsetFactors[self.idType][self.id]) then
     self.saveButton:Enable()
     self.resetButton:Enable()
   else
@@ -610,13 +633,13 @@ f.storeStatusLabel:SetJustifyH("LEFT")
 function f:RefreshLabels()
 
   if not self:IsShown() then return end
-
   -- print("RefreshLabels", self.mountName, self.offsetFactor)
   -- print(self.coarseSlider:GetValue(), self.fineSlider:GetValue(), self.valueBox:GetText())
 
   if not self.id then
     self.mountNameLabel:SetText("No mount or vehicle selected.")
     self.storeStatusLabel:SetText("")
+    self:RefreshButtons()
     return
   end
 
@@ -626,28 +649,19 @@ function f:RefreshLabels()
     self.valueBox:SetText(self.offsetFactor)
   end
 
-
-  if self.idType == "mountId" then
-    local storeStatus = ""
-    if customOffsetFactors[self.idType][self.id] then
-      storeStatus = "Custom factor ("..customOffsetFactors[self.idType][self.id]["factor"]..")"
-      if cosFix.mountIdToShoulderOffsetFactor[self.id] then
-        storeStatus = storeStatus .. " overriding hardcoded factor ("..cosFix.mountIdToShoulderOffsetFactor[self.id]..")"
-      end
-    elseif cosFix.mountIdToShoulderOffsetFactor[self.id] then
-      storeStatus = "Hardcoded factor ("..cosFix.mountIdToShoulderOffsetFactor[self.id]..")"
-    else
-      storeStatus = "No factor available"
+  local storeStatus = ""
+  if customOffsetFactors[self.idType][self.id] then
+    storeStatus = "Custom factor ("..customOffsetFactors[self.idType][self.id]["factor"]..")"
+    if cosFix.hardcodedOffsetFactors[self.idType][self.id] then
+      storeStatus = storeStatus .. " overriding hardcoded factor ("..cosFix.hardcodedOffsetFactors[self.idType][self.id]..")"
     end
-    self.storeStatusLabel:SetText(storeStatus..".")
-    
-  elseif self.idType == "vehicleId" then
-  
-  
-    print("TODO: Check store status for vehicle")
+  elseif cosFix.hardcodedOffsetFactors[self.idType][self.id] then
+    storeStatus = "Hardcoded factor ("..cosFix.hardcodedOffsetFactors[self.idType][self.id]..")"
   else
-    return
+    storeStatus = "No factor available"
   end
+  self.storeStatusLabel:SetText(storeStatus..".")
+
 
   -- Got to remember the original offsetFactor, because when we do coarseSlider:SetValue() it
   -- will change self.offsetFactor.
@@ -665,7 +679,7 @@ function f:RefreshLabels()
 
   self:RefreshButtons()
 
-  cosFix:setDelayedShoulderOffset()
+  cosFix:SetDelayedShoulderOffset()
 end
 
 
@@ -691,7 +705,7 @@ f:SetScript("OnHide", function(self)
 
     -- To make this conditional we would have to call CorrectShoulderOffset() anyway.
     -- So we can just as well always call it.
-    cosFix:setDelayedShoulderOffset()
+    cosFix:SetDelayedShoulderOffset()
   end)
 
 
@@ -705,7 +719,7 @@ f:SetScript("OnShow", function(self)
       f:SetId("vehicleId", tonumber(vehicleId))
     end
 
-    cosFix:setDelayedShoulderOffset()
+    cosFix:SetDelayedShoulderOffset()
     self:PrepareMountSelectButtons()
     self:RefreshLabels()
   end)
@@ -715,40 +729,38 @@ function f:SetId(idType, id, reset)
   -- print("SetId", self.idType, idType, self.id, id)
 
   if not reset and self.idType == idType and self.id == id and self.mountName ~= "" then
+    -- print("doing nothing")
     return
   end
 
-  self.idType = idType
-  self.id = id
-
-  
   if idType == "mountId" then
     self.mountName, self.mountSpellId, self.mountIcon = C_MountJournal_GetMountInfoByID(id)
 
-    if customOffsetFactors[idType][id] then
-      self.offsetFactor = customOffsetFactors[idType][id]["factor"]
-    elseif cosFix.mountIdToShoulderOffsetFactor[id] then
-      self.offsetFactor = cosFix.mountIdToShoulderOffsetFactor[id]
-    else
-      self.offsetFactor = 0
-    end
-    
   elseif idType == "vehicleId" then
-    
     -- If we are currently in a vehicle, call UnitGUID()
-    -- which will also store the vehicle name in vehicleIdToName.
+    -- which will store the vehicle name in vehicleIdToName.
     if UnitInVehicle("player") then UnitGUID("vehicle") end
     if cosFix.vehicleIdToName[id] then
       self.mountName = cosFix.vehicleIdToName[id]
     else
       self.mountName = ""
     end
-    
-    print("TODO: Get hardcoded or custom vehicle offset", self.mountName)
-    self.offsetFactor = 0
+
   else
     return
   end
+
+
+  if customOffsetFactors[idType][id] then
+    self.offsetFactor = customOffsetFactors[idType][id]["factor"]
+  elseif cosFix.hardcodedOffsetFactors[idType][id] then
+    self.offsetFactor = cosFix.hardcodedOffsetFactors[idType][id]
+  else
+    self.offsetFactor = 0
+  end
+
+  self.idType = idType
+  self.id = id
 
   self:PrepareMountSelectButtons()
   self:RefreshLabels()
@@ -762,8 +774,9 @@ mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_START")
 mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_FAILED")
 mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 mountChangedFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
+mountChangedFrame:RegisterEvent("UNIT_EXITING_VEHICLE")
 mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
-  if not self:IsShown() then return end
+  if not f:IsShown() then return end
 
   if event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
     if IsMounted() and not UnitOnTaxi("player") then
@@ -776,20 +789,14 @@ mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
       return
     end
   end
-  
+
   if event == "UNIT_ENTERED_VEHICLE" then
-  
-    -- TODO take name!
-  
     local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
     f:SetId("vehicleId", tonumber(vehicleId))
-    return
   end
 
   f:RefreshButtons()
 end)
-
-
 
 
 -- -- For debugging.
@@ -799,20 +806,5 @@ end)
   -- f:Hide()
   -- f:Show()
 -- end)
-
-
-
-
--- CanExitVehicle()
--- VehicleExit()
-
-
-
--- "Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up"
--- "Interface\\Vehicles\\UI-Vehicles-Button-Exit-Down"
--- "Interface\\Buttons\\ButtonHilight-Square"
-
-
-
 
 

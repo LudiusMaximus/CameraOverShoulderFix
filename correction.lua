@@ -218,11 +218,20 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
     local _, _, _, _, _, vehicleId = strsplit("-", vehicleGuid)
     vehicleId = tonumber(vehicleId)
-    -- print(vehicleId)
 
-    -- Is the vehicle form already in the code?
-    if self.vehicleIdToShoulderOffsetFactor[vehicleId] then
-      returnValue = self.vehicleIdToShoulderOffsetFactor[vehicleId]
+    -- If the setFactorFrame is open for the current vehicle, use the currently set value.
+    local f = self.setFactorFrame
+    if f and f:IsShown() and f.idType == "vehicleId" and f.id == vehicleId then
+      return f.offsetFactor
+    end
+
+
+    -- Do we have a custom factor for this vehicle?
+    if customOffsetFactors["vehicleId"][vehicleId] then
+      returnValue = customOffsetFactors["vehicleId"][vehicleId]["factor"]
+    -- Do we have a hardcoded factor for this vehicle?
+    elseif self.hardcodedOffsetFactors["vehicleId"][vehicleId] then
+      returnValue = self.hardcodedOffsetFactors["vehicleId"][vehicleId]
     else
       local vehicleName = GetUnitName("vehicle", false) or cosFix.vehicleIdToName[vehicleId]
       if not vehicleName then
@@ -230,7 +239,6 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
       else
         self:DebugPrintUnknownModel("Vehicle '" .. vehicleName .. "' (" .. vehicleId .. ") not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       end
-
       -- Default for all unknown vehicles...
       returnValue = 0
     end
@@ -296,19 +304,19 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
           -- Should only happen when logging in mounted with a character after purging of SavedVariables.
           if self.db.char.lastActiveMount == nil then
             returnValue = mountedFactor * 6
-            
-            
+
+
           -- Use the last active mount.
           else
-          
+
             mountId = self.db.char.lastActiveMount
-          
+
             -- Do we have a custom factor for this mount?
             if customOffsetFactors["mountId"][mountId] then
               returnValue = mountedFactor * customOffsetFactors["mountId"][mountId]["factor"]
             -- Do we have a hardcoded factor for this mount?
-            elseif self.mountIdToShoulderOffsetFactor[mountId] then
-              returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
+            elseif self.hardcodedOffsetFactors["mountId"][mountId] then
+              returnValue = mountedFactor * self.hardcodedOffsetFactors["mountId"][mountId]
             else
               local creatureName = C_MountJournal_GetMountInfoByID(mountId)
               self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:" .. mountId .. "|h[Click here to define it!]|h|r")
@@ -333,8 +341,8 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
         if customOffsetFactors["mountId"][mountId] then
           returnValue = mountedFactor * customOffsetFactors["mountId"][mountId]["factor"]
         -- Do we have a hardcoded factor for this mount?
-        elseif self.mountIdToShoulderOffsetFactor[mountId] then
-          returnValue = mountedFactor * self.mountIdToShoulderOffsetFactor[mountId]
+        elseif self.hardcodedOffsetFactors["mountId"][mountId] then
+          returnValue = mountedFactor * self.hardcodedOffsetFactors["mountId"][mountId]
         else
           local creatureName = C_MountJournal_GetMountInfoByID(mountId)
           self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. mountId .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:".. mountId .. "|h[Click here to define it!]|h|r")

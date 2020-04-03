@@ -27,8 +27,8 @@ local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
 -- Needed if un-hooks without reloading are required.
 local runhook = false
 
-function cosFix.HyperlinkHandler(...)
 
+function cosFix.HyperlinkHandler(...)
   if not runhook then return end
 
   local _, linkType = ...
@@ -43,14 +43,10 @@ end
 
 
 
-
-
 local function CosFixSetCVar(...)
-
   if not runhook then return end
 
   local variable, value = ...
-
   if variable == "test_cameraOverShoulder" then
 
     cosFix.currentShoulderOffset = value
@@ -64,12 +60,17 @@ local function CosFixSetCVar(...)
     cosFix.currentModelFactor = modelFactor
 
     value = value * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * modelFactor
-
     CosFix_OriginalSetCVar(variable, value)
   end
-
 end
 hooksecurefunc("SetCVar", CosFixSetCVar)
+-- TODO: This is good, because if other addons set a deliberate test_cameraOverShoulder
+-- value, the correction will be applied.
+-- On the other hand, if some addon does
+-- SetCVar("test_cameraOverShoulder", GetCVar("test_cameraOverShoulder"))
+-- expecting it to not change anything, we have a problem, because
+-- the correction will be applied repeatedly...
+-- What is better?
 
 
 -- Store original camera zoom functions.
@@ -156,7 +157,7 @@ end
 -- Set the variables currently in the db.
 function cosFix:SetVariables()
   for variable, value in pairs(self.db.profile.cvars) do
-    CosFixSetCVar(variable, value)
+    SetCVar(variable, value)
   end
 end
 
@@ -223,6 +224,7 @@ function cosFix:OnEnable()
     self:ScheduleTimer("SetVariables", 0.1)
 
     self.currentShoulderOffset = self.db.profile.cvars.test_cameraOverShoulder
+
     local modelFactor = self:CorrectShoulderOffset()
     if modelFactor == -1 then
       self.currentModelFactor = 1
