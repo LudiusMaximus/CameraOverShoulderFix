@@ -12,12 +12,12 @@ local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
 local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
 local GetShapeshiftFormID = _G.GetShapeshiftFormID
-local GetUnitName = _G.GetUnitName
 local IsMounted = _G.IsMounted
 local UnitBuff = _G.UnitBuff
 local UnitClass = _G.UnitClass
 local UnitInVehicle = _G.UnitInVehicle
 local UnitGUID = _G.UnitGUID
+local UnitName = _G.UnitName
 local UnitOnTaxi = _G.UnitOnTaxi
 local UnitRace = _G.UnitRace
 local UnitSex = _G.UnitSex
@@ -233,7 +233,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     elseif self.hardcodedOffsetFactors["vehicleId"][vehicleId] then
       returnValue = self.hardcodedOffsetFactors["vehicleId"][vehicleId]
     else
-      local vehicleName = GetUnitName("vehicle", false) or cosFix.vehicleIdToName[vehicleId]
+      local vehicleName = cosFix.vehicleIdToName[vehicleId] or UnitName("vehicle")
       if not vehicleName then
         self:DebugPrintUnknownModel("Vehicle with ID " .. vehicleId .. " not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. vehicleId .."|h[Click here to define it!]|h|r")
       else

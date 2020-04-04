@@ -10,6 +10,10 @@ local function round(num, numDecimalPlaces)
   return math_floor(num * mult + 0.5) / mult;
 end
 
+
+
+-- Build our own vehicleIdToName lookup table,
+-- because the vehicle name can only be obtained when actually on the vehicle.
 cosFix.vehicleIdToName = {}
 local mutex = false
 local function StoreVehicleIdToName(unit)
@@ -22,12 +26,15 @@ local function StoreVehicleIdToName(unit)
   if not vehicleGUID then return end
 
   local _, _, _, _, _, vehicleId = strsplit("-", vehicleGUID)
+  if cosFix.vehicleIdToName[tonumber(vehicleId)] then return end
+
   mutex = true
-  cosFix.vehicleIdToName[tonumber(vehicleId)] = GetUnitName("vehicle", false)
+  cosFix.vehicleIdToName[tonumber(vehicleId)] = UnitName("vehicle")
   mutex = false
 end
 hooksecurefunc("UnitGUID", StoreVehicleIdToName)
 hooksecurefunc("UnitName", StoreVehicleIdToName)
+hooksecurefunc("GetUnitName", StoreVehicleIdToName)
 
 
 local _G = _G
@@ -35,6 +42,8 @@ local pairs = _G.pairs
 local tonumber = _G.tonumber
 
 local ButtonFrameTemplate_HidePortrait = _G.ButtonFrameTemplate_HidePortrait
+local C_DateAndTime_GetCurrentCalendarTime = _G.C_DateAndTime.GetCurrentCalendarTime
+local C_BattleNet_GetGameAccountInfoByGUID = _G.C_BattleNet.GetGameAccountInfoByGUID
 local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local C_MountJournal_GetMountIDs      = _G.C_MountJournal.GetMountIDs
 local C_MountJournal_SummonByID       = _G.C_MountJournal.SummonByID
@@ -42,7 +51,6 @@ local C_MountJournal_SummonByID       = _G.C_MountJournal.SummonByID
 local CanExitVehicle = _G.CanExitVehicle
 local CreateFrame    = _G.CreateFrame
 local GameTooltip    = _G.GameTooltip
-local GetUnitName    = _G.GetUnitName
 local IsMounted      = _G.IsMounted
 local PlaySound      = _G.PlaySound
 local UnitInVehicle  = _G.UnitInVehicle
@@ -65,7 +73,7 @@ ButtonFrameTemplate_HidePortrait(f)
 -- ButtonFrameTemplate_HideAttic(f)
 -- ButtonFrameTemplate_HideButtonBar(f)
 f:SetFrameStrata("HIGH")
-f:SetWidth(430)
+f:SetWidth(460)
 f:SetHeight(220)
 f:SetMovable(true)
 f:EnableMouse(true)
@@ -147,9 +155,9 @@ f.saveButton:SetScript("OnClick", function()
     end
 
     -- Save the custom value.
-    local gameAccountInfo = C_BattleNet.GetGameAccountInfoByGUID(UnitGUID("player"))
+    local gameAccountInfo = C_BattleNet_GetGameAccountInfoByGUID(UnitGUID("player"))
     local playerName = gameAccountInfo.characterName.."-"..gameAccountInfo.realmName
-    local calendarTime = C_DateAndTime.GetCurrentCalendarTime()
+    local calendarTime = C_DateAndTime_GetCurrentCalendarTime()
     local today = format("%02d-%02d-%d", calendarTime.year, calendarTime.month, calendarTime.monthDay)
     local character = gameAccountInfo.raceName .. " " .. ((UnitSex("player") == 2) and "Male" or "Female")
     customOffsetFactors[f.idType][f.id] = {
@@ -175,6 +183,7 @@ f.exportButton:SetText("Export")
 f.exportButton:SetWidth(70)
 f.exportButton:SetScript("OnClick", function()
     print("TODO: Export")
+    --https://stackoverflow.com/questions/36031078/lua-number-to-string-behaviour
   end)
 f.exportButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -206,7 +215,7 @@ f.coarseSlider = CreateFrame("Slider", "cosFix_coarseSlider", f.Inset, "OptionsS
   -- insets = { left = 3, right = 3, top = 6, bottom = 6 }})
 -- s:SetOrientation('HORIZONTAL')
 f.coarseSlider:SetPoint("TOP", 3, -60)
-f.coarseSlider:SetWidth(220)
+f.coarseSlider:SetWidth(240)
 f.coarseSlider:SetHeight(17)
 f.coarseSlider:SetMinMaxValues(0, maxFactor)
 f.coarseSlider:SetValueStep(0.1)
@@ -222,7 +231,7 @@ f.coarseSlider:SetScript("OnValueChanged", function(self, value)
 
 f.fineSlider = CreateFrame("Slider", "cosFix_fineSlider", f.coarseSlider, "OptionsSliderTemplate")
 f.fineSlider:SetPoint("TOP", 0, -35)
-f.fineSlider:SetWidth(220)
+f.fineSlider:SetWidth(240)
 f.fineSlider:SetHeight(17)
 f.fineSlider:SetMinMaxValues(-0.5, 0.5)
 f.fineSlider:SetValueStep(0.001)
@@ -243,7 +252,7 @@ f.fineSlider:SetScript("OnValueChanged", function(self, value)
 
 
 f.valueBox = CreateFrame("EditBox", nil, f.Inset, "InputBoxTemplate")
-f.valueBox:SetPoint("TOPRIGHT", -14, -62)
+f.valueBox:SetPoint("TOPRIGHT", -14, -60)
 f.valueBox:SetFontObject(ChatFontNormal)
 f.valueBox:SetSize(50, 20)
 f.valueBox:SetMultiLine(false)
@@ -319,8 +328,8 @@ f.okButton:SetScript("OnClick", function()
 
 
 f.mountButton = CreateFrame("CheckButton", nil, f.Inset)
-f.mountButton:SetPoint("TOPLEFT", 20, -62)
-f.mountButton:SetSize(50, 50)
+f.mountButton:SetPoint("TOPLEFT", 14, -60)
+f.mountButton:SetSize(55, 55)
 -- The normal texture will be set when the mount is set.
 -- (SetNormalTexture() does not work here, as it will be replaced by the PushedTexture.)
 -- https://www.wowinterface.com/forums/showthread.php?t=57901
@@ -338,8 +347,8 @@ f.mountButton:SetScript("OnClick", function(self)
 
 
 f.vehicleButton = CreateFrame("Button", nil, f.Inset)
-f.vehicleButton:SetPoint("TOPLEFT", 20, -62)
-f.vehicleButton:SetSize(50, 50)
+f.vehicleButton:SetPoint("TOPLEFT", 14, -60)
+f.vehicleButton:SetSize(55, 55)
 f.vehicleButton:SetNormalTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up")
 f.vehicleButton:SetDisabledTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up")
 f.vehicleButton:GetDisabledTexture():SetDesaturated(true)
@@ -396,6 +405,27 @@ f.nextMountButton:SetScript("OnLeave", function(self)
   end)
 
 
+f.returnToCurrentButton = CreateFrame("Button", nil, f.Inset)
+f.returnToCurrentButton:SetNormalTexture("Interface\\Buttons\\UI-MICROBUTTON-QUEST-UP")
+f.returnToCurrentButton:SetPushedTexture("Interface\\Buttons\\UI-MICROBUTTON-QUEST-DOWN")
+f.returnToCurrentButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
+local shrinkFactor = 0.55
+f.returnToCurrentButton:SetSize(32*shrinkFactor, 64*shrinkFactor)
+f.returnToCurrentButton:SetPoint("RIGHT", f.prevMountButton, "LEFT", -2, 6)
+f.returnToCurrentButton:SetScript("OnClick", function()
+    local idType, id = f:GetCurrentMountOrVehicle()
+    f:SetId(idType, id, true)
+  end)
+f.returnToCurrentButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP", 0, -11.5)
+    GameTooltip:SetText("Current mount/vehicle.")
+  end)
+f.returnToCurrentButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+  end)
+
+
+
 f.nextUnknownMountButton = CreateFrame("Button", nil, f.Inset)
 f.nextUnknownMountButton:SetNormalAtlas("QuestCollapse-Show-Up")
 f.nextUnknownMountButton:SetPushedAtlas("QuestCollapse-Show-Down")
@@ -415,6 +445,7 @@ f.nextUnknownMountButton:SetScript("OnEnter", function(self)
 f.nextUnknownMountButton:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
   end)
+
 
 
 f.onlyCustomCheckBox = CreateFrame("CheckButton", "cosFix_onlyCustomCheckBox", f, "UICheckButtonTemplate")
@@ -509,17 +540,21 @@ function f:RefreshButtons()
   -- print("RefreshButtons")
 
   if not self.id then
-    self.mountButton:Hide()
-    self.vehicleButton:Hide()
-    self.coarseSlider:Hide()
-    self.fineSlider:Hide()
-    self.valueBox:Hide()
-    self.okButton:Hide()
-    self.minusButton:Hide()
-    self.plusButton:Hide()
     self.deleteButton:Disable()
     self.resetButton:Disable()
     self.saveButton:Disable()
+
+    self.mountButton:Hide()
+    self.vehicleButton:Hide()
+    self.returnToCurrentButton:Hide()
+    self.okButton:Hide()
+
+    self.coarseSlider:Hide()
+    self.fineSlider:Hide()
+    self.valueBox:Hide()
+    self.minusButton:Hide()
+    self.plusButton:Hide()
+
     return
   else
     self.coarseSlider:Show()
@@ -529,6 +564,8 @@ function f:RefreshButtons()
     self.plusButton:Show()
   end
 
+
+  -- Value box.
   if self.valueBox.lastValidValue ~= self.offsetFactor then
     self.okButton:Show()
     self.minusButton:Disable()
@@ -550,8 +587,10 @@ function f:RefreshButtons()
   end
 
 
+  -- Mount/Vehicle button.
+  self.mountButton:Hide()
+  self.vehicleButton:Hide()
   if self.idType == "mountId" then
-    self.vehicleButton:Hide()
     self.mountButton:Show()
     self.mountButton.normalTexture:SetTexture(self.mountIcon)
 
@@ -564,7 +603,6 @@ function f:RefreshButtons()
     end
 
   elseif self.idType == "vehicleId" then
-    self.mountButton:Hide()
     self.vehicleButton:Show()
 
     -- Set the enabled status!
@@ -573,12 +611,19 @@ function f:RefreshButtons()
     else
       self.vehicleButton:Disable()
     end
-
-  else
-    return
   end
 
 
+  -- Return to current mount button.
+  local idType, id = self:GetCurrentMountOrVehicle()
+  if not idType or (idType == self.idType and id == self.id) then
+    self.returnToCurrentButton:Hide()
+  else
+    self.returnToCurrentButton:Show()
+  end
+
+
+  -- Delete, Reset, Save buttons.
   if customOffsetFactors[self.idType][self.id] then
     self.deleteButton:Enable()
   else
@@ -644,6 +689,8 @@ function f:RefreshLabels()
   end
 
   self.mountNameLabel:SetText(self.mountName .. " (ID: " .. self.id .. ")")
+  -- Longest possible string...
+  -- self.mountNameLabel:SetText("Heavenly Crimson Cloud Serpent (ID: 9999)")
 
   if self.offsetFactor ~= self.valueBox:GetText() then
     self.valueBox:SetText(self.offsetFactor)
@@ -687,9 +734,6 @@ end
 
 
 
-
-
-
 f.idType = nil
 f.id = nil
 f.mountName = nil
@@ -709,17 +753,25 @@ f:SetScript("OnHide", function(self)
   end)
 
 
+
+
+function f:GetCurrentMountOrVehicle()
+  if IsMounted() and not UnitOnTaxi("player") then
+    return "mountId", cosFix:GetCurrentMount()
+  elseif UnitInVehicle("player") then
+    local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
+    return "vehicleId", tonumber(vehicleId)
+  else
+    return nil, nil
+  end
+end
+
+
 f:SetScript("OnShow", function(self)
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN)
+    local idType, id = self:GetCurrentMountOrVehicle()
+    self:SetId(idType, id, true)
 
-    if IsMounted() and not UnitOnTaxi("player") then
-      f:SetId("mountId", cosFix:GetCurrentMount(), true)
-    elseif UnitInVehicle("player") then
-      local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
-      f:SetId("vehicleId", tonumber(vehicleId))
-    end
-
-    cosFix:SetDelayedShoulderOffset()
     self:PrepareMountSelectButtons()
     self:RefreshLabels()
   end)
