@@ -81,10 +81,15 @@ function cosFix:GetCurrentModelId()
     if self.db.char.lastModelId ~= nil then
       modelId = self.db.char.lastModelId
     -- Otherwise, if possible use the standard for the player's race and gender.
-    -- Attention: May also be nil for unknown player races.
     else
       local _, raceFile = UnitRace("player")
-      modelId = self.raceAndGenderToModelId[raceFile][UnitSex("player")]
+
+      -- In case of unknown player races.
+      if self.raceAndGenderToModelId[raceFile] ~= nil then
+        modelId = self.raceAndGenderToModelId[raceFile][UnitSex("player")]
+      else
+        self:DebugPrint("RaceFile " .. raceFile .. " not in raceAndGenderToModelId...")
+      end
     end
 
     -- Try again later to find the correct modelId.

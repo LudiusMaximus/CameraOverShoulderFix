@@ -15,8 +15,8 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [940356]  = 1.403,  -- Gnome female               - 2020-01-04
   [1005887] = 0.962,  -- Draenei male               - 2020-03-17
   [1022598] = 1.28,   -- Draenei female             - 2020-01-01
-  [307454]  = 0.94,   -- Worgen male
-  [307453]  = 1.18,   -- Worgen female
+  [307454]  = 0.936,  -- Worgen male                - 2020-04-24
+  [307453]  = 1.182,  -- Worgen female              - 2020-04-24
 
   -- Alliance allied races
   [1734034] = 1.337,  -- VoidElf male               - 2020-01-03
@@ -52,8 +52,11 @@ cosFix.modelIdToShoulderOffsetFactor = {
   [1630402] = 1.1,    -- HighmountainTauren female  - 2020-03-17
                       -- MagharOrc male (same as Orc)
                       -- MagharOrc female (same as Orc)
-  [1630447] = 1.05,   -- ZandalariTroll male
-  [1662187] = 1.09,   -- ZandalariTroll female
+  [1630447] = 1.046,  -- ZandalariTroll male        - 2020-04-24
+  [1662187] = 1.077,  -- ZandalariTroll female      - 2020-04-24
+  [1890761] = 1.21,   -- Vulpera male               - 2020-04-24
+  [1890759] = 1.21,   -- Vulpera female             - 2020-04-24
+
 
   -- Pandaren
   [535052]  = 0.95,   -- Pandaren male              - 2020-01-01
@@ -76,29 +79,33 @@ cosFix.modelIdToShoulderOffsetFactor = {
 -- We only use this for Worgen form changes (so far)...
 cosFix.raceAndGenderToModelId = {
   -- race                      male           female
-  ["Human"]              = {  [2] = 1011653,  [3] = 1000764 },
-  ["Dwarf"]              = {  [2] = 878772,   [3] = 950080 },
-  ["NightElf"]           = {  [2] = 974343,   [3] = 921844 },
-  ["Gnome"]              = {  [2] = 900914,   [3] = 940356 },
-  ["Draenei"]            = {  [2] = 1005887,  [3] = 1022598 },
-  ["Worgen"]             = {  [2] = 307454,   [3] = 307453  },
+  ["Human"]              = {  [2] = 1011653,  [3] = 1000764  },
+  ["Dwarf"]              = {  [2] = 878772,   [3] = 950080   },
+  ["NightElf"]           = {  [2] = 974343,   [3] = 921844   },
+  ["Gnome"]              = {  [2] = 900914,   [3] = 940356   },
+  ["Draenei"]            = {  [2] = 1005887,  [3] = 1022598  },
+  ["Worgen"]             = {  [2] = 307454,   [3] = 307453   },
 
   ["VoidElf"]            = {  [2] = 1734034,  [3] = 1733758  },
   ["LightforgedDraenei"] = {  [2] = 1620605,  [3] = 1593999  },
   ["DarkIronDwarf"]      = {  [2] = 1890765,  [3] = 1890763  },
   ["KulTiran"]           = {  [2] = 1721003,  [3] = 1886724  },
+  ["Mechagnome"]         = {  [2] = 2622502,  [3] = 2564806  },
 
-  ["Orc"]                = {  [2] = 1968587,  [3] = 949470  },
-  ["Scourge"]            = {  [2] = 959310,   [3] = 997378  },
-  ["Tauren"]             = {  [2] = 968705,   [3] = 986648  },
+
+  ["Orc"]                = {  [2] = 1968587,  [3] = 949470   },
+  ["Scourge"]            = {  [2] = 959310,   [3] = 997378   },
+  ["Tauren"]             = {  [2] = 968705,   [3] = 986648   },
   ["Troll"]              = {  [2] = 1022938,  [3] = 1018060  },
   ["BloodElf"]           = {  [2] = 1100087,  [3] = 1100258  },
-  ["Goblin"]             = {  [2] = 119376,   [3] = 119369  },
+  ["Goblin"]             = {  [2] = 119376,   [3] = 119369   },
 
   ["Nightborne"]         = {  [2] = 1814471,  [3] = 1810676  },
   ["HighmountainTauren"] = {  [2] = 1630218,  [3] = 1630402  },
-  ["MagharOrc"]          = {  [2] = 1968587,  [3] = 949470  },   -- Same as Orc
+  ["MagharOrc"]          = {  [2] = 1968587,  [3] = 949470   },   -- Same as Orc
   ["ZandalariTroll"]     = {  [2] = 1630447,  [3] = 1662187  },
+  ["Vulpera"]            = {  [2] = 1890761,  [3] = 1890759  },
+
 
   ["Pandaren"]           = {  [2] = 535052,   [3] = 589715  },
 
