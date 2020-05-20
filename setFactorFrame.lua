@@ -5,7 +5,7 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 local math_floor = _G.math.floor
 
-local function round(num, numDecimalPlaces)
+local function Round(num, numDecimalPlaces)
   local mult = 10^(numDecimalPlaces or 0);
   return math_floor(num * mult + 0.5) / mult;
 end
@@ -158,8 +158,10 @@ f.saveButton:SetScript("OnClick", function()
     local gameAccountInfo = C_BattleNet_GetGameAccountInfoByGUID(UnitGUID("player"))
     local playerName = gameAccountInfo.characterName.."-"..gameAccountInfo.realmName
     local calendarTime = C_DateAndTime_GetCurrentCalendarTime()
-    local today = format("%02d-%02d-%d", calendarTime.year, calendarTime.month, calendarTime.monthDay)
-    local character = gameAccountInfo.raceName .. " " .. ((UnitSex("player") == 2) and "Male" or "Female")
+    local today = format("%02d-%02d-%02d", calendarTime.year, calendarTime.month, calendarTime.monthDay)
+    
+    local _, raceFile = UnitRace("player")
+    local character = raceFile .. " " .. ((UnitSex("player") == 2) and "Male" or "Female")
     customOffsetFactors[f.idType][f.id] = {
       factor     = f.offsetFactor,
       metaData   = f.mountName .. ";" .. today .. ";" .. playerName .. ";" .. character
@@ -224,7 +226,7 @@ f.coarseSlider:SetObeyStepOnDrag(true)
  _G[f.coarseSlider:GetName() .. 'High']:SetText(maxFactor)
  _G[f.coarseSlider:GetName() .. 'Text']:SetText("")
 f.coarseSlider:SetScript("OnValueChanged", function(self, value)
-    f.offsetFactor = round(value, 1)
+    f.offsetFactor = Round(value, 1)
     f:RefreshLabels()
   end)
 
@@ -245,7 +247,7 @@ f.fineSlider:SetScript("OnValueChanged", function(self, value)
     elseif f.coarseSlider:GetValue() + value > maxFactor then
       f.offsetFactor = maxFactor
     else
-      f.offsetFactor = round(f.coarseSlider:GetValue() + value, 3)
+      f.offsetFactor = Round(f.coarseSlider:GetValue() + value, 3)
     end
     f:RefreshLabels()
   end)
@@ -282,7 +284,7 @@ f.valueBox:SetScript("OnEnterPressed", function(self)
     if self.lastValidValue > maxFactor then
       self.lastValidValue = maxFactor
     end
-    f.offsetFactor = round(self.lastValidValue, 3)
+    f.offsetFactor = Round(self.lastValidValue, 3)
     f:RefreshLabels()
   end)
 
@@ -322,7 +324,7 @@ f.okButton:SetScript("OnClick", function()
     if f.valueBox.lastValidValue > maxFactor then
       f.valueBox.lastValidValue = maxFactor
     end
-    f.offsetFactor = round(f.valueBox.lastValidValue, 3)
+    f.offsetFactor = Round(f.valueBox.lastValidValue, 3)
     f:RefreshLabels()
   end)
 
@@ -413,12 +415,12 @@ local shrinkFactor = 0.55
 f.returnToCurrentButton:SetSize(32*shrinkFactor, 64*shrinkFactor)
 f.returnToCurrentButton:SetPoint("RIGHT", f.prevMountButton, "LEFT", -2, 6)
 f.returnToCurrentButton:SetScript("OnClick", function()
-    local idType, id = f:GetCurrentMountOrVehicle()
+    local idType, id = f:GetCurrentTypeAndId()
     f:SetId(idType, id, true)
   end)
 f.returnToCurrentButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP", 0, -11.5)
-    GameTooltip:SetText("Current mount/vehicle.")
+    GameTooltip:SetText("Current mount/vehicle/model.")
   end)
 f.returnToCurrentButton:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
@@ -615,7 +617,7 @@ function f:RefreshButtons()
 
 
   -- Return to current mount button.
-  local idType, id = self:GetCurrentMountOrVehicle()
+  local idType, id = self:GetCurrentTypeAndId()
   if not idType or (idType == self.idType and id == self.id) then
     self.returnToCurrentButton:Hide()
   else
@@ -713,9 +715,9 @@ function f:RefreshLabels()
   -- Got to remember the original offsetFactor, because when we do coarseSlider:SetValue() it
   -- will change self.offsetFactor.
   local originalOffsetFactor = f.offsetFactor
-  local roundedCoarseSlider = round(self.coarseSlider:GetValue(), 1)
+  local roundedCoarseSlider = Round(self.coarseSlider:GetValue(), 1)
   if originalOffsetFactor < roundedCoarseSlider - 0.5 or originalOffsetFactor > roundedCoarseSlider + 0.5 then
-    local roundedOffsetFactor = round(originalOffsetFactor, 1)
+    local roundedOffsetFactor = Round(originalOffsetFactor, 1)
     self.coarseSlider:SetValue(roundedOffsetFactor)
     self.fineSlider:SetValue(originalOffsetFactor - roundedOffsetFactor)
   else
@@ -755,12 +757,14 @@ f:SetScript("OnHide", function(self)
 
 
 
-function f:GetCurrentMountOrVehicle()
+function f:GetCurrentTypeAndId()
   if IsMounted() and not UnitOnTaxi("player") then
     return "mountId", cosFix:GetCurrentMount()
   elseif UnitInVehicle("player") then
     local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
     return "vehicleId", tonumber(vehicleId)
+  elseif not cosFix.playerModelOffsetFactors[cosFix:GetCurrentModelId()] then
+    return "modelId", cosFix:GetCurrentModelId()
   else
     return nil, nil
   end
@@ -769,7 +773,7 @@ end
 
 f:SetScript("OnShow", function(self)
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN)
-    local idType, id = self:GetCurrentMountOrVehicle()
+    local idType, id = self:GetCurrentTypeAndId()
     self:SetId(idType, id, true)
 
     self:PrepareMountSelectButtons()
@@ -778,10 +782,10 @@ f:SetScript("OnShow", function(self)
 
 
 function f:SetId(idType, id, reset)
-  -- print("SetId", self.idType, idType, self.id, id)
+  print("SetId", self.idType, idType, self.id, id, reset)
 
-  if not reset and self.idType == idType and self.id == id and self.mountName ~= "" then
-    -- print("doing nothing")
+  if not idType or not id or (not reset and self.idType == idType and self.id == id and self.mountName ~= "") then
+    print("doing nothing")
     return
   end
 
@@ -797,6 +801,11 @@ function f:SetId(idType, id, reset)
     else
       self.mountName = ""
     end
+
+  elseif idType == "modelId" then
+    self.mountName = "Unknown Model"
+    self.mountIcon = nil
+    self.mountSpellId = nil
 
   else
     return
@@ -827,6 +836,7 @@ mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_FAILED")
 mountChangedFrame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 mountChangedFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
 mountChangedFrame:RegisterEvent("UNIT_EXITING_VEHICLE")
+mountChangedFrame:RegisterEvent("UNIT_MODEL_CHANGED")
 mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
   if not f:IsShown() then return end
 
@@ -845,7 +855,11 @@ mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
   if event == "UNIT_ENTERED_VEHICLE" then
     local _, _, _, _, _, vehicleId = strsplit("-", UnitGUID("vehicle"))
     f:SetId("vehicleId", tonumber(vehicleId))
+  elseif event == "UNIT_MODEL_CHANGED" then
+    local idType, id = f:GetCurrentTypeAndId()
+    f:SetId(idType, id)
   end
+
 
   f:RefreshButtons()
 end)

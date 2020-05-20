@@ -187,14 +187,57 @@ function cosFix:OnInitialize()
   self:InitializeDatabase()
   self:InitializeOptions()
 
-  -- Initialize custom offset factors variable.
+  -- Initialize customOffsetFactors if not yet present.
   if not customOffsetFactors then
     customOffsetFactors = {
       mountId = {},
       vehicleId = {},
+      modelId = {},
     }
-  end
+  
+  -- Or check the variables already stored.
+  else
+  
+     -- Purge possible entries of old addon versions.
+    for k in pairs(customOffsetFactors) do
+      if not (k == "mountId" or k == "vehicleId" or k == "modelId") then
+        customOffsetFactors[k] = nil
+      end
+    end
 
+    for _, idType in pairs({"mountId", "vehicleId", "modelId"}) do
+
+      -- Initialize empty table if not yet present.
+      if not customOffsetFactors[idType] then
+        customOffsetFactors[idType] = {}
+      
+      -- Or purge values that are the same as hardcoded.
+      else  
+        for k, v in pairs(customOffsetFactors[idType]) do
+          if v == self.hardcodedOffsetFactors[idType][k] then
+            print("Purging", idType, k, "=", v, "from custom factors because it is now hardcoded!")
+            customOffsetFactors[idType][k] = nil
+          end
+        end
+      end
+      
+    end
+  end
+  
+  
+  -- Initialize newFactorTriggers if not yet present.
+  if not newFactorTriggers then 
+    newFactorTriggers = {}
+    
+    -- TODO: merge hardcoded values.
+    
+  else
+    
+    -- TODO: copy hardcoded values.
+  
+  end
+  
+  
 end
 
 
@@ -258,6 +301,36 @@ end
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- To test the SpellActivationOverlayFrame frame!
+-- Thanks to Fizzlemizz: https://us.forums.blizzard.com/en/wow/t/are-there-any-areas-that-call-the-extra-and-zone-action-buttons-concurrently/526223/2
+
+local function Overlay(frame)
+	local f = CreateFrame("Frame", frame:GetName().."FizzOverlay", UIParent)
+	f:SetAllPoints(frame)
+	f.t = f:CreateTexture()
+	f.t:SetAllPoints()
+	f.t:SetTexture("Interface/BUTTONS/WHITE8X8")
+	f.t:SetColorTexture(0.2, 0.2, 1, 0.5)
+	f.f = f:CreateFontString()
+	f.f:SetFont("Fonts/FRIZQT__.TTF", 12)
+	f.f:SetJustifyH("CENTER")
+	f.f:SetJustifyV("CENTER")
+	f.f:SetPoint("CENTER")
+	f.f:SetText(frame:GetName())
+end
 
 
 

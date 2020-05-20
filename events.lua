@@ -351,7 +351,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
           local modelFactor = 1
           if self.db.profile.modelIndependentShoulderOffset then
-            modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
+            modelFactor = self.playerModelOffsetFactors[modelId]
           end
 
           -- Call with pre-determined modelFactor to avoid recalculation.
@@ -431,7 +431,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       -- print("UNIT_MODEL_CHANGED thinks you are", modelId, "while lastModelId is", self.db.char.lastModelId)
 
-      if (modelId == nil) or (self.modelIdToShoulderOffsetFactor[modelId] == nil) then
+      if (modelId == nil) or (self.playerModelOffsetFactors[modelId] == nil) then
         -- print("Using the opposite of lastModelId.")
         modelId = self:GetOppositeLastWorgenModelId()
         -- This will eventually set the right model ID.
@@ -452,7 +452,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
         local modelFactor = 1
         if self.db.profile.modelIndependentShoulderOffset then
-          modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
+          modelFactor = self.playerModelOffsetFactors[modelId]
         end
 
         -- Call with pre-determined modelFactor to avoid recalculation.
@@ -467,7 +467,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
         local modelFactor = 1
         if self.db.profile.modelIndependentShoulderOffset then
-          modelFactor = self.modelIdToShoulderOffsetFactor[modelId]
+          modelFactor = self.playerModelOffsetFactors[modelId]
         end
         -- Call with pre-determined modelFactor to avoid recalculation.
         return self:SetDelayedShoulderOffset(0, modelFactor)
