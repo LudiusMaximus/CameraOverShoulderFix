@@ -8,8 +8,6 @@ local tremove = _G.tremove
 local tinsert = _G.tinsert
 local unpack = _G.unpack
 
-local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
-
 local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local GetShapeshiftFormID = _G.GetShapeshiftFormID
 local InCombatLockdown = _G.InCombatLockdown
@@ -226,10 +224,8 @@ end
 
 -- This function is needed to set a delayed update in the future,
 -- for which we do yet not know the currentShoulderOffset value.
-function cosFix:SetCurrentShoulderOffset()
-
-  CosFix_OriginalSetCVar("test_cameraOverShoulder", self.currentShoulderOffset * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor)
-
+function cosFix:SetShoulderOffset()
+  SetCVar("test_cameraOverShoulder", self:GetCurrentShoulderOffset() * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor)
 end
 
 
@@ -237,8 +233,7 @@ end
 -- The last argument (modelFactor) is optional and can be set
 -- if a specific modelFactor should be enforced.
 function cosFix:SetDelayedShoulderOffset(delay, modelFactor)
-
-  -- print("SetDelayedShoulderOffset")
+  -- print("SetDelayedShoulderOffset", delay, modelFactor)
 
   if not delay then delay = 0 end
 
@@ -257,7 +252,7 @@ function cosFix:SetDelayedShoulderOffset(delay, modelFactor)
   if delay == 0 then
 
     self.currentModelFactor = modelFactor
-    return self:SetCurrentShoulderOffset()
+    return self:SetShoulderOffset()
 
   -- Wait for delay until doing something.
   -- This will also work while easing is in progress because the easing functions take into account
@@ -268,7 +263,7 @@ function cosFix:SetDelayedShoulderOffset(delay, modelFactor)
         delay,
         function()
           self.currentModelFactor = modelFactor
-          self:SetCurrentShoulderOffset()
+          self:SetShoulderOffset()
         end
       )
 
@@ -285,14 +280,6 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
   -- print("##########################")
   -- print("ShoulderOffsetEventHandler got event:", event, ...)
-
-  -- If both shoulder offset adjustments are disabled, do nothing!
-  if not self.db.profile.modelIndependentShoulderOffset and not self.db.profile.shoulderOffsetZoom then
-    return
-  end
-
-
-
 
 
   -- Needed for Worgen form change..
@@ -349,10 +336,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
           self.skipNextWorgenUnitModelChanged = 1
 
           -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
-          local modelFactor = 1
-          if self.db.profile.modelIndependentShoulderOffset then
-            modelFactor = self.playerModelOffsetFactors[modelId]
-          end
+          local modelFactor = self.playerModelOffsetFactors[modelId]
 
           -- Call with pre-determined modelFactor to avoid recalculation.
           return self:SetDelayedShoulderOffset(0.06, modelFactor)
@@ -450,10 +434,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         self.db.char.lastModelId = modelId
 
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
-        local modelFactor = 1
-        if self.db.profile.modelIndependentShoulderOffset then
-          modelFactor = self.playerModelOffsetFactors[modelId]
-        end
+        local modelFactor = self.playerModelOffsetFactors[modelId]
 
         -- Call with pre-determined modelFactor to avoid recalculation.
         -- TODO: In fact this is still a little bit too late! But if we want to set it earlier, we would have
@@ -465,10 +446,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- print("UNIT_MODEL_CHANGED -> Human")
 
         -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
-        local modelFactor = 1
-        if self.db.profile.modelIndependentShoulderOffset then
-          modelFactor = self.playerModelOffsetFactors[modelId]
-        end
+        local modelFactor = self.playerModelOffsetFactors[modelId]
+
         -- Call with pre-determined modelFactor to avoid recalculation.
         return self:SetDelayedShoulderOffset(0, modelFactor)
 
@@ -732,11 +711,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- When shoulder offset is greater than 0, we need to set it to 10 times its actual value
       -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next UNIT_AURA.
       local modelFactor = self:CorrectShoulderOffset()
-      if modelFactor == -1 then
-        return
-      end
-      -- But only if modelIndependentShoulderOffset is enabled.
-      if (self.db.profile.modelIndependentShoulderOffset) and (self.currentShoulderOffset > 0) then
+      
+      if self:GetCurrentShoulderOffset() > 0 then
         modelFactor = modelFactor * 10
       end
       -- Call with pre-determined modelFactor to avoid recalculation.

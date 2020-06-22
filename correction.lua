@@ -7,8 +7,6 @@ local pairs = _G.pairs
 local strsplit = _G.strsplit
 local tonumber = _G.tonumber
 
-local CosFix_OriginalSetCVar = _G.CosFix_OriginalSetCVar
-
 local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
 local GetShapeshiftFormID = _G.GetShapeshiftFormID
@@ -191,8 +189,8 @@ function cosFix:SetLastModelId()
       -- Set the shoulder offset again!
       if not dynamicCamLoaded or (not DynamicCam.LibCamera:ZoomInProgress() and not self.easeShoulderOffsetInProgress) then
 
-        local correctedShoulderOffset = self.currentShoulderOffset * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor
-        CosFix_OriginalSetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+        local correctedShoulderOffset = self:GetCurrentShoulderOffset() * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor
+        SetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
       end
 
@@ -247,12 +245,6 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
   -- print("Current modelId", modelId)
 
 
-  -- If the "Correct Shoulder Offset" function is deactivated, we do not correct the offset.
-  if not self.db.profile.modelIndependentShoulderOffset then
-    return 1
-  end
-
-
   local returnValue = 1
 
   -- Is the player entering a vehicle or already in a vehicle?
@@ -282,7 +274,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
     -- No idea why this is necessary when mounted; seems to be a persistent bug on Blizzard's side!
     local mountedFactor = 1
-    if cosFix.currentShoulderOffset < 0 then
+    if cosFix:GetCurrentShoulderOffset() < 0 then
       mountedFactor = mountedFactor / 10
     end
 
@@ -478,26 +470,3 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
 end
 
-
--- For zoom levels smaller than finishDecrease, we already want a shoulder offset of 0.
--- For zoom levels greater than startDecrease, we want the user set shoulder offset.
--- For zoom levels in between, we want a gradual transition between the two above.
-function cosFix:GetShoulderOffsetZoomFactor(zoomLevel)
-
-  -- print("GetShoulderOffsetZoomFactor(" .. zoomLevel .. ")")
-
-  if not self.db.profile.shoulderOffsetZoom then
-    return 1
-  end
-
-  local startDecrease = 8
-  local finishDecrease = 2
-
-  if zoomLevel < finishDecrease then
-    return 0
-  elseif zoomLevel < startDecrease then
-    return (zoomLevel-finishDecrease) / (startDecrease-finishDecrease)
-  else
-    return 1
-  end
-end

@@ -782,10 +782,10 @@ f:SetScript("OnShow", function(self)
 
 
 function f:SetId(idType, id, reset)
-  print("SetId", self.idType, idType, self.id, id, reset)
+  -- print("SetId", self.idType, idType, self.id, id, reset)
 
   if not idType or not id or (not reset and self.idType == idType and self.id == id and self.mountName ~= "") then
-    print("doing nothing")
+    -- print("doing nothing")
     return
   end
 

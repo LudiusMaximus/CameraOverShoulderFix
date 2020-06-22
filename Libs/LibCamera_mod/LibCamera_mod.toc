@@ -1,7 +1,0 @@
-## Interface: 80000
-## Version: 1.0
-## Title: LibCamera_mod
-## Author: mpstark
-## Notes: A library for camera motion. cosFix: I added a "not_really" argument to the StopZooming() function to skip the final call of reallyStopZooming().
-
-LibCamera_mod.lua
