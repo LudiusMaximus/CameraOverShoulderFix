@@ -278,8 +278,8 @@ end
 
 function cosFix:ShoulderOffsetEventHandler(event, ...)
 
-  -- print("##########################")
-  -- print("ShoulderOffsetEventHandler got event:", event, ...)
+  print("##########################")
+  print("ShoulderOffsetEventHandler got event:", event, ...)
 
 
   -- Needed for Worgen form change..
@@ -839,49 +839,49 @@ function cosFix:RegisterEvents()
 
 
   -- Needed for Worgen form change.
-  self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "ShoulderOffsetEventHandler")
+  -- self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "ShoulderOffsetEventHandler")
 
-  -- Needed for Worgen form change.
-  self:RegisterEvent("UNIT_MODEL_CHANGED", "ShoulderOffsetEventHandler")
+  -- -- Needed for Worgen form change.
+  -- self:RegisterEvent("UNIT_MODEL_CHANGED", "ShoulderOffsetEventHandler")
 
-  -- To suppress Worgen UNIT_MODEL_CHANGED after loading screen.
-  self:RegisterEvent("LOADING_SCREEN_DISABLED", "ShoulderOffsetEventHandler")
-
-
-
-  -- Needed for shapeshifting.
-  self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
-
-  -- Needed for changing into bear.
-  self:RegisterEvent("UNIT_HEALTH_FREQUENT", "ShoulderOffsetEventHandler")
-
-  -- Needed to know if you change from a non-travel form into travel form.
-  self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
+  -- -- To suppress Worgen UNIT_MODEL_CHANGED after loading screen.
+  -- self:RegisterEvent("LOADING_SCREEN_DISABLED", "ShoulderOffsetEventHandler")
 
 
-  -- Needed for automatic dismounting when pet battle starts.
-  self:RegisterEvent("PLAYER_CONTROL_LOST", "ShoulderOffsetEventHandler")
+
+  -- -- Needed for shapeshifting.
+  -- self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
+
+  -- -- Needed for changing into bear.
+  -- self:RegisterEvent("UNIT_HEALTH_FREQUENT", "ShoulderOffsetEventHandler")
+
+  -- -- Needed to know if you change from a non-travel form into travel form.
+  -- self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
 
 
-  -- Needed for mounting and entering taxis.
-  self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
-
-  -- Needed to determine the right time to change shoulder offset when dismounting,
-  -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.
-  self:RegisterEvent("UNIT_AURA", "ShoulderOffsetEventHandler")
-
-  -- For Demon Hunter Metamorphosis.
-  self:RegisterEvent("SPELLS_CHANGED", "ShoulderOffsetEventHandler")
+  -- -- Needed for automatic dismounting when pet battle starts.
+  -- self:RegisterEvent("PLAYER_CONTROL_LOST", "ShoulderOffsetEventHandler")
 
 
-  -- Needed for vehicles.
-  self:RegisterEvent("UNIT_ENTERING_VEHICLE", "ShoulderOffsetEventHandler")
-  self:RegisterEvent("UNIT_EXITING_VEHICLE", "ShoulderOffsetEventHandler")
+  -- -- Needed for mounting and entering taxis.
+  -- self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
 
-  -- Needed for being teleported into a dungeon while mounted,
-  -- because when entering you get automatically dismounted
-  -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
-  self:RegisterEvent("PLAYER_ENTERING_WORLD", "ShoulderOffsetEventHandler")
+  -- -- Needed to determine the right time to change shoulder offset when dismounting,
+  -- -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.
+  -- self:RegisterEvent("UNIT_AURA", "ShoulderOffsetEventHandler")
+
+  -- -- For Demon Hunter Metamorphosis.
+  -- self:RegisterEvent("SPELLS_CHANGED", "ShoulderOffsetEventHandler")
+
+
+  -- -- Needed for vehicles.
+  -- self:RegisterEvent("UNIT_ENTERING_VEHICLE", "ShoulderOffsetEventHandler")
+  -- self:RegisterEvent("UNIT_EXITING_VEHICLE", "ShoulderOffsetEventHandler")
+
+  -- -- Needed for being teleported into a dungeon while mounted,
+  -- -- because when entering you get automatically dismounted
+  -- -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
+  -- self:RegisterEvent("PLAYER_ENTERING_WORLD", "ShoulderOffsetEventHandler")
 
 end
 
