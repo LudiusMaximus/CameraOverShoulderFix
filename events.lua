@@ -613,10 +613,10 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
   -- Needed for changing into bear.
-  elseif event == "UNIT_HEALTH_FREQUENT" then
+  elseif event == "UNIT_HEALTH" then
     if self.activateNextHealthFrequent == true then
 
-      -- print("Executing UNIT_HEALTH_FREQUENT")
+      -- print("Executing UNIT_HEALTH")
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
@@ -853,7 +853,7 @@ function cosFix:RegisterEvents()
   self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
 
   -- Needed for changing into bear.
-  self:RegisterEvent("UNIT_HEALTH_FREQUENT", "ShoulderOffsetEventHandler")
+  self:RegisterEvent("UNIT_HEALTH", "ShoulderOffsetEventHandler")
 
   -- Needed to know if you change from a non-travel form into travel form.
   self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
