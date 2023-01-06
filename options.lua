@@ -3,7 +3,6 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
-local DynamicCam = _G.DynamicCam
 
 
 local defaults = {

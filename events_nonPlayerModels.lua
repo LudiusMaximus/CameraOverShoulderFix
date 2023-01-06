@@ -36,19 +36,67 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 
 
 -- TODO: Should be in another file.
--- TODO: Some models are sex specific (Masquerad), others are furthermore race specific (Demon Hunter Metamorphosis).
 local hardcodedSpellsToModels = {
 
-  [202477] = {   -- Masquerade
-    [2] = 1368718,  -- male
-
+  [202477] = {
+    ["name"] = "Masquerade",
+    ["all"] = {
+      [2] = 1368718,
+      [3] = nil,
+    },
   },
 
 }
 
 
 
+-- customSpellsToModels
 
+
+function cosFix:SpellsToModel(spellId)
+
+  -- TODO: If setFactorFrame is open, check if spellId is the current spell.
+  -- local f = self.setFactorFrame
+  -- if f and f:IsShown() and ... then
+    
+  -- end
+
+
+  -- Next priority is given to custom factors.
+  if customOffsetFactors[idType][id] then
+    return customOffsetFactors[idType][id]["factor"]
+  end
+  
+  -- Next priority is given to hardcoded factors.
+  if self.hardcodedOffsetFactors[idType][id] then
+    return self.hardcodedOffsetFactors[idType][id]
+  end
+  
+  
+  -- Otherwise the id is not yet known.
+  if idType == "vehicleId" then
+    local vehicleName = cosFix.vehicleIdToName[id] or UnitName("vehicle")
+    if not vehicleName then
+      self:DebugPrintUnknownModel("Vehicle with ID " .. id .. " not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. id .."|h[Click here to define it!]|h|r")
+    else
+      self:DebugPrintUnknownModel("Vehicle '" .. vehicleName .. "' (" .. id .. ") not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. id .."|h[Click here to define it!]|h|r")
+    end
+  elseif idType == "mountId" then
+    local creatureName = C_MountJournal_GetMountInfoByID(id)
+    self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. id .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:".. id .. "|h[Click here to define it!]|h|r")
+  elseif idType == "modelId" then
+    -- Provide id of last spellcast!
+    if cosFix.lastSpellId and GetTime() - cosFix.lastSpellTime < 0.2 then
+      local spellName = GetSpellInfo(cosFix.lastSpellId)
+      self:DebugPrintUnknownModel("Model with ID " .. id .. " (" .. spellName .. " ?) not yet known. |cffff9900|Hitem:cosFix:modelId:" .. id .. ":spellId:" .. cosFix.lastSpellId .. "|h[Click here to define it!]|h|r")
+    else
+      self:DebugPrintUnknownModel("Model with ID " .. id .. " not yet known. Perform form change again to get the responsible spell.")
+    end
+  end
+  
+  return 0
+
+end
 
 
 
@@ -146,9 +194,9 @@ local function PrimeTimer(spellId, mode)
 
   print("########### Priming timer for", spellId, mode)
 
-  -- TODO: Mark the events of this frame to store them
-  -- as soon as we know after how many frames UNIT_MODEL_CHANGED
-  -- has happened.
+  -- TODO: Try to learn event patterns preceding the outliers.
+  -- Mark the events of this frame (and previous?) to store them
+  -- as soon as UNIT_MODEL_CHANGED has happened.
 
 
   -- Create entry in newFactorTriggers if necessary.
@@ -182,15 +230,13 @@ end
 
 
 
-
-local function EventLogFunction(self, event, ...)
-  
-  -- TODO: Log all events and store them for a certain time.
-  
-end
-local eventLogFrame = CreateFrame("Frame")
-eventLogFrame:RegisterAllEvents()
-eventLogFrame:SetScript("OnEvent", EventLogFunction)
+-- -- TODO: Try to learn event patterns preceding the outliers.
+-- local function EventLogFunction(self, event, ...)
+  -- -- Log all events and store them for a certain time.
+-- end
+-- local eventLogFrame = CreateFrame("Frame")
+-- eventLogFrame:RegisterAllEvents()
+-- eventLogFrame:SetScript("OnEvent", EventLogFunction)
 
 
 
@@ -383,12 +429,26 @@ local function FrameCounterFunction(_, elapse)
 
 
       -- Actually apply the new shoulder offset.
-
-      -- TODO: Define corrected shoulder offset.
-      -- TODO: Make function to check custom and hardcoded factors.
-      -- local modelId = hardcodedSpellsToModels[spellId][UnitSex("player")]
-
-      -- SetCVar("test_cameraOverShoulder", GetShoulderOffsetFactor(true))
+      if counterPrimedMode == "leave" then
+      
+        local _, raceFile = UnitRace("player")
+        if cosFix.raceAndGenderToModelId[raceFile] ~= nil then
+          local modelId = cosFix.raceAndGenderToModelId[raceFile][UnitSex("player")]
+          cosFix.currentModelFactor = cosFix.playerModelOffsetFactors[modelId]
+        else
+          cosFix:DebugPrint("RaceFile " .. raceFile .. " not in raceAndGenderToModelId...")
+        end
+      
+      elseif counterPrimedMode == "enter" then
+      
+        -- TODO: Make function to check custom and hardcoded factors.
+        local modelId = hardcodedSpellsToModels[counterPrimedSpellId][UnitSex("player")]
+        
+        cosFix.currentModelFactor = cosFix:ModelToShoulderOffset("model", modelId)
+      end
+      
+      local correctedShoulderOffset = cosFix:GetCurrentShoulderOffset() * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.currentModelFactor
+      SetCVar("test_cameraOverShoulder", correctedShoulderOffset)
 
     end
   end
@@ -427,9 +487,10 @@ local function UnitModelChangedFunction(_, _, ...)
     
     unitModelChangedAtFrame = frameCounter
 
-
-    -- TODO: Store the events at the time of UNIT_AURA as belonging to unitModelChangedAtFrame-1 in our DB.
-
+    -- TODO: Try to learn event patterns preceding the outliers.
+    -- Store the marked events of UNIT_AURA frame (and before?) as belonging
+    -- to unitModelChangedAtFrame-1 (or rather timesOfFrames[unitModelChangedAtFrame-1]?)
+    -- in a database. This database could then be the training data for some learing algorithm.
 
 
 
@@ -468,6 +529,8 @@ local function UnitModelChangedFunction(_, _, ...)
 end
 local unitModelChangedFrame = CreateFrame("Frame")
 unitModelChangedFrame:RegisterEvent("UNIT_MODEL_CHANGED")
-unitModelChangedFrame:SetScript("OnEvent", UnitModelChangedFunction)
+
+-- TODO: Reenable to continue:
+-- unitModelChangedFrame:SetScript("OnEvent", UnitModelChangedFunction)
 
 

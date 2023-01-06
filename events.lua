@@ -30,7 +30,7 @@ local TFrame
 SLASH_MYTRACE1 = "/tt"
 SlashCmdList["MYTRACE"] = function(msg)
   if not TFrame then
-    TFrame = CreateFrame("Button", "FizzleEventList", UIParent)
+    TFrame = CreateFrame("Button", "FizzleEventList", UIParent, BackdropTemplateMixin and "BackdropTemplate")
     TFrame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile="Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 8, insets = {left = 8, right = 8, top = 8, bottom = 8},})
     TFrame:SetBackdropColor(0, 0, 0)
     TFrame:SetPoint("CENTER", 0)
@@ -278,8 +278,8 @@ end
 
 function cosFix:ShoulderOffsetEventHandler(event, ...)
 
-  print("##########################")
-  print("ShoulderOffsetEventHandler got event:", event, ...)
+  -- print("##########################")
+  -- print("ShoulderOffsetEventHandler got event:", event, ...)
 
 
   -- Needed for Worgen form change..
@@ -386,6 +386,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
     local _, raceFile = UnitRace("player")
+    -- print(raceFile)
     if raceFile == "Worgen" then
 
       -- When logging in, there is also a call of UNIT_MODEL_CHANGED.
@@ -452,9 +453,28 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         return self:SetDelayedShoulderOffset(0, modelFactor)
 
       end
+    -- (raceFile == "Worgen")
+    
+    elseif  raceFile == "Dracthyr" then
+      
+      if IsMounted() then
+        return
+      end
+      
+      -- Try to determine the current form.
+      self.modelFrame:SetUnit("player")
+      local modelId = self.modelFrame:GetModelFileID()
 
-    end  -- (raceFile == "Worgen")
+      -- print(modelId)
 
+      -- As we are circumventing CorrectShoulderOffset(), we have to check the setting here!
+      local modelFactor = self.playerModelOffsetFactors[modelId]
+
+      -- Call with pre-determined modelFactor to avoid recalculation.
+      return self:SetDelayedShoulderOffset(0, modelFactor)
+
+
+    end
 
     -- print("... doing nothing!")
 
@@ -613,10 +633,10 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
 
   -- Needed for changing into bear.
-  elseif event == "UNIT_HEALTH_FREQUENT" then
+  elseif event == "UNIT_HEALTH" then
     if self.activateNextHealthFrequent == true then
 
-      -- print("Executing UNIT_HEALTH_FREQUENT")
+      -- print("Executing UNIT_HEALTH")
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
 
@@ -839,49 +859,51 @@ function cosFix:RegisterEvents()
 
 
   -- Needed for Worgen form change.
-  -- self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "ShoulderOffsetEventHandler")
+  self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "ShoulderOffsetEventHandler")
 
-  -- -- Needed for Worgen form change.
-  -- self:RegisterEvent("UNIT_MODEL_CHANGED", "ShoulderOffsetEventHandler")
+  -- Needed for Worgen form change.
+  self:RegisterEvent("UNIT_MODEL_CHANGED", "ShoulderOffsetEventHandler")
 
-  -- -- To suppress Worgen UNIT_MODEL_CHANGED after loading screen.
-  -- self:RegisterEvent("LOADING_SCREEN_DISABLED", "ShoulderOffsetEventHandler")
-
-
-
-  -- -- Needed for shapeshifting.
-  -- self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
-
-  -- -- Needed for changing into bear.
-  -- self:RegisterEvent("UNIT_HEALTH_FREQUENT", "ShoulderOffsetEventHandler")
-
-  -- -- Needed to know if you change from a non-travel form into travel form.
-  -- self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
+  -- To suppress Worgen UNIT_MODEL_CHANGED after loading screen.
+  self:RegisterEvent("LOADING_SCREEN_DISABLED", "ShoulderOffsetEventHandler")
 
 
-  -- -- Needed for automatic dismounting when pet battle starts.
-  -- self:RegisterEvent("PLAYER_CONTROL_LOST", "ShoulderOffsetEventHandler")
+
+  -- Needed for shapeshifting.
+  self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "ShoulderOffsetEventHandler")
 
 
-  -- -- Needed for mounting and entering taxis.
-  -- self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
-
-  -- -- Needed to determine the right time to change shoulder offset when dismounting,
-  -- -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.
-  -- self:RegisterEvent("UNIT_AURA", "ShoulderOffsetEventHandler")
-
-  -- -- For Demon Hunter Metamorphosis.
-  -- self:RegisterEvent("SPELLS_CHANGED", "ShoulderOffsetEventHandler")
+  -- Needed for changing into bear.
+  self:RegisterEvent("UNIT_HEALTH", "ShoulderOffsetEventHandler")
 
 
-  -- -- Needed for vehicles.
-  -- self:RegisterEvent("UNIT_ENTERING_VEHICLE", "ShoulderOffsetEventHandler")
-  -- self:RegisterEvent("UNIT_EXITING_VEHICLE", "ShoulderOffsetEventHandler")
+  -- Needed to know if you change from a non-travel form into travel form.
+  self:RegisterEvent("UNIT_SPELLCAST_SENT", "ShoulderOffsetEventHandler")
 
-  -- -- Needed for being teleported into a dungeon while mounted,
-  -- -- because when entering you get automatically dismounted
-  -- -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
-  -- self:RegisterEvent("PLAYER_ENTERING_WORLD", "ShoulderOffsetEventHandler")
+
+  -- Needed for automatic dismounting when pet battle starts.
+  self:RegisterEvent("PLAYER_CONTROL_LOST", "ShoulderOffsetEventHandler")
+
+
+  -- Needed for mounting and entering taxis.
+  self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED", "ShoulderOffsetEventHandler")
+
+  -- Needed to determine the right time to change shoulder offset when dismounting,
+  -- changing from Shaman Ghostwolf into normal and for Demon Hunter Metamorphosis.
+  self:RegisterEvent("UNIT_AURA", "ShoulderOffsetEventHandler")
+
+  -- For Demon Hunter Metamorphosis.
+  self:RegisterEvent("SPELLS_CHANGED", "ShoulderOffsetEventHandler")
+
+
+  -- Needed for vehicles.
+  self:RegisterEvent("UNIT_ENTERING_VEHICLE", "ShoulderOffsetEventHandler")
+  self:RegisterEvent("UNIT_EXITING_VEHICLE", "ShoulderOffsetEventHandler")
+
+  -- Needed for being teleported into a dungeon while mounted,
+  -- because when entering you get automatically dismounted
+  -- without PLAYER_MOUNT_DISPLAY_CHANGED being executed.
+  self:RegisterEvent("PLAYER_ENTERING_WORLD", "ShoulderOffsetEventHandler")
 
 end
 

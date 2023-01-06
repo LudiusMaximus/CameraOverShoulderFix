@@ -64,7 +64,15 @@ cosFix.playerModelOffsetFactors = {
   -- Pandaren
   [535052]  = 0.95,   -- Pandaren male              - 2020-01-01
   [589715]  = 1.07,   -- Pandaren female            - 2020-01-01
-
+  
+  -- Dracthyr
+  -- [4207724] = 0.875,      -- Dracthyr male/female       - 2022-12-10  (matched with Albino Drake)
+  [4207724] = 0.721,      -- Dracthyr male/female       - 2022-12-10  (matched with visage form)
+  
+  
+  
+  [4220448] = 1.455,      -- Dracthyr visage female     - 2022-12-10
+  [4395382] = 1.33,      -- Dracthyr visage male       - 2022-12-10
 
 }
 

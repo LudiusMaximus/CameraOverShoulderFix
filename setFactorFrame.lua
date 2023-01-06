@@ -6,8 +6,8 @@ local cosFix = LibStub("AceAddon-3.0"):GetAddon(folderName)
 local math_floor = _G.math.floor
 
 local function Round(num, numDecimalPlaces)
-  local mult = 10^(numDecimalPlaces or 0);
-  return math_floor(num * mult + 0.5) / mult;
+  local mult = 10^(numDecimalPlaces or 0)
+  return math_floor(num * mult + 0.5) / mult
 end
 
 
@@ -88,24 +88,10 @@ _G[f:GetName().."TitleText"]:ClearAllPoints()
 _G[f:GetName().."TitleText"]:SetPoint("TOPLEFT", 10, -6)
 
 
--- Thanks to Vrul: https://www.wowinterface.com/forums/showthread.php?p=335437#post335437
-local newSize = 60
-
-local corner = f.NineSlice.BottomLeftCorner
-local oldX, oldY = corner:GetSize()
-local L, R, T, B = 0, newSize/oldX, 1-newSize/oldY, 1
-corner:SetSize(newSize, newSize)
-corner:SetTexCoord(L, R, T, B)
-
-local corner = f.NineSlice.BottomRightCorner
-local oldX, oldY = corner:GetSize()
-local L, R, T, B = 1-newSize/oldX, 1, 1-newSize/oldY, 1
-corner:SetSize(newSize, newSize)
-corner:SetTexCoord(L, R, T, B)
 
 
 f.deleteButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-f.deleteButton:SetPoint("BOTTOMLEFT", 1, 4)
+f.deleteButton:SetPoint("BOTTOMLEFT", 6, 4)
 f.deleteButton:SetText("Delete")
 f.deleteButton:SetWidth(90)
 f.deleteButton:SetScript("OnClick", function()
@@ -147,6 +133,15 @@ f.saveButton:SetPoint("BOTTOMRIGHT", -1, 4)
 f.saveButton:SetText("Save")
 f.saveButton:SetWidth(90)
 f.saveButton:SetScript("OnClick", function()
+
+    local modelId = cosFix:GetCurrentModelId()
+    if modelId == 4207724 then
+      print("For some reason being mounted in Dracthyr form needs intractably different offsets than all the other player models. More coding is required to store custom values just for them. So just don't use this for Dracythr form! Sorry.")
+      return
+    end
+
+
+
     -- Do not allow the same custom value as hardcoded value.
     if cosFix.hardcodedOffsetFactors[f.idType][f.id] and cosFix.hardcodedOffsetFactors[f.idType][f.id] == f.offsetFactor then
       customOffsetFactors[f.idType][f.id] = nil
@@ -172,6 +167,13 @@ f.saveButton:SetScript("OnClick", function()
 f.saveButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
     GameTooltip:SetText("Save custom offset factor.")
+    
+    local modelId = cosFix:GetCurrentModelId()
+    if modelId == 4207724 then
+      -- self:Disable()
+      GameTooltip:SetText("For some reason being mounted in Dracthyr form needs intractably different offsets than all the other player models. More coding is required to store custom values just for them. So just don't use this for Dracythr form! Sorry.", 1, 0, 0, 1, true)
+    end
+    
   end)
 f.saveButton:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
@@ -179,8 +181,10 @@ f.saveButton:SetScript("OnLeave", function(self)
 
 
 
+
 f.exportButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-f.exportButton:SetPoint("TOPRIGHT", -25, 0)
+f.exportButton:SetFrameLevel(f.NineSlice:GetFrameLevel() + 10)
+f.exportButton:SetPoint("TOPRIGHT", cosFix_SetFactorFrameCloseButton, "TOPLEFT", 0, 0)
 f.exportButton:SetText("Export")
 f.exportButton:SetWidth(70)
 f.exportButton:SetScript("OnClick", function()
@@ -194,16 +198,6 @@ f.exportButton:SetScript("OnEnter", function(self)
 f.exportButton:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
   end)
-
--- Place the nice button divider!
-local layer, subLevel = f.NineSlice.TopRightCorner:GetDrawLayer()
-f.exportButton.btnDivLeft = f.NineSlice:CreateTexture("cosFix_btnDivLeft", "BORDER")
-f.exportButton.btnDivLeft:SetPoint("RIGHT", f.exportButton, "LEFT", 6, 0)
-f.exportButton.btnDivLeft:SetDrawLayer(layer, subLevel+1)
-f.exportButton.btnDivLeft:SetAtlas("UI-Frame-BtnDivLeft", true)
-local oldX, oldY = f.exportButton.btnDivLeft:GetSize()
-local shrinkFactor = 0.83
-f.exportButton.btnDivLeft:SetSize(oldX*shrinkFactor, oldY*shrinkFactor)
 
 
 
@@ -329,18 +323,31 @@ f.okButton:SetScript("OnClick", function()
   end)
 
 
+-- Did not get into this template. Texture size was greater than the button size
+-- when using SetNormalTexture.
+-- f.mountButton = CreateFrame("CheckButton", nil, f.Inset, "SecureActionButtonTemplate, ActionButtonTemplate")
+
+-- Doing it manually like this.
 f.mountButton = CreateFrame("CheckButton", nil, f.Inset)
 f.mountButton:SetPoint("TOPLEFT", 14, -60)
 f.mountButton:SetSize(55, 55)
+f.mountButton.mountButtonBackgroundTexture = f.mountButton:CreateTexture()
+f.mountButton.mountButtonBackgroundTexture:SetAllPoints()
+f.mountButton.mountButtonBackgroundTexture:SetDrawLayer("BACKGROUND", 0)
+f.mountButton:SetHighlightTexture("UI-HUD-ActionBar-IconFrame-Mouseover")
+f.mountButton:SetPushedTexture("UI-HUD-ActionBar-IconFrame-Down")
+f.mountButton:SetCheckedTexture("UI-HUD-ActionBar-IconFrame-Mouseover")
+
 -- The normal texture will be set when the mount is set.
 -- (SetNormalTexture() does not work here, as it will be replaced by the PushedTexture.)
 -- https://www.wowinterface.com/forums/showthread.php?t=57901
-f.mountButton.normalTexture = f.mountButton:CreateTexture()
-f.mountButton.normalTexture:SetAllPoints()
-f.mountButton.normalTexture:SetDrawLayer("BACKGROUND", 0)
-f.mountButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-f.mountButton:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-f.mountButton:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
+
+
+
+
+
+
+
 f.mountButton:SetScript("OnClick", function(self)
     C_MountJournal_SummonByID(f.id)
     f:RefreshButtons()
@@ -355,7 +362,7 @@ f.vehicleButton:SetNormalTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-U
 f.vehicleButton:SetDisabledTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Up")
 f.vehicleButton:GetDisabledTexture():SetDesaturated(true)
 f.vehicleButton:SetPushedTexture("Interface\\Vehicles\\UI-Vehicles-Button-Exit-Down")
-f.vehicleButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+f.vehicleButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
 
 local L, R, T, B = 0.15, 0.85, 0.15, 0.85
 f.vehicleButton:GetNormalTexture():SetTexCoord(L, R, T, B )
@@ -457,14 +464,16 @@ _G[f.onlyCustomCheckBox:GetName() .. "Text"]:SetText(" Custom only")
 f.onlyCustomCheckBox:SetScript("OnClick", function(self)
     f:PrepareMountSelectButtons()
   end
-);
+)
 f.onlyCustomCheckBox:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT", 0, -20)
     GameTooltip:SetText("Only skip through mounts for which\nyou have set a custom factor.")
-  end)
+  end
+)
 f.onlyCustomCheckBox:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
-  end)
+  end
+)
 
 
 
@@ -594,7 +603,9 @@ function f:RefreshButtons()
   self.vehicleButton:Hide()
   if self.idType == "mountId" then
     self.mountButton:Show()
-    self.mountButton.normalTexture:SetTexture(self.mountIcon)
+    
+    self.mountButton.mountButtonBackgroundTexture:SetTexture(self.mountIcon)
+    
 
     -- Set the checked status!
     _, _, _, _, _, _, _, _, spellId = UnitCastingInfo("player")
@@ -655,7 +666,7 @@ end
 
 
 
-f.instructionTextLabel = f:CreateFontString(nil, "HIGH")
+f.instructionTextLabel = f:CreateFontString(nil, "OVERLAY")
 f.instructionTextLabel:SetFont("Fonts\\FRIZQT__.TTF", 12)
 f.instructionTextLabel:SetTextColor(0.8, 0.8, 0.8)
 f.instructionTextLabel:SetPoint("TOPLEFT", f.TopTileStreaks, "TOPLEFT", 10, -10)
@@ -663,14 +674,14 @@ f.instructionTextLabel:SetPoint("TOPRIGHT", f.TopTileStreaks, "TOPRIGHT", -10, -
 f.instructionTextLabel:SetJustifyH("LEFT")
 f.instructionTextLabel:SetText("Mount and dismount repeatedly to find the ideal factor for a mount or vehicle. See the addon web page for a video tutorial.")
 
-f.mountNameLabel = f:CreateFontString(nil, "HIGH")
+f.mountNameLabel = f:CreateFontString(nil, "OVERLAY")
 f.mountNameLabel:SetFont("Fonts\\FRIZQT__.TTF", 14)
 f.mountNameLabel:SetTextColor(1.0, 0.6, 0.0)
 f.mountNameLabel:SetPoint("TOPLEFT", f.Inset, "TOPLEFT", 13, -14)
 f.mountNameLabel:SetPoint("TOPRIGHT", f.Inset, "TOPRIGHT", -6, -14)
 f.mountNameLabel:SetJustifyH("LEFT")
 
-f.storeStatusLabel = f:CreateFontString(nil, "HIGH")
+f.storeStatusLabel = f:CreateFontString(nil, "OVERLAY")
 f.storeStatusLabel:SetFont("Fonts\\FRIZQT__.TTF", 10)
 f.storeStatusLabel:SetTextColor(0.2, 0.7, 1.0)
 f.storeStatusLabel:SetPoint("TOPLEFT", f.mountNameLabel, "BOTTOMLEFT", 0, -4)
@@ -865,12 +876,12 @@ mountChangedFrame:SetScript("OnEvent", function(self, event, ...)
 end)
 
 
--- -- For debugging.
--- local startup = CreateFrame("Frame")
--- startup:RegisterEvent("PLAYER_ENTERING_WORLD")
--- startup:SetScript("OnEvent", function(self, event, ...)
-  -- f:Hide()
-  -- f:Show()
--- end)
+-- For debugging.
+local startup = CreateFrame("Frame")
+startup:RegisterEvent("PLAYER_ENTERING_WORLD")
+startup:SetScript("OnEvent", function(self, event, ...)
+  f:Hide()
+  f:Show()
+end)
 
 

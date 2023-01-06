@@ -25,12 +25,12 @@ local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
 local runhook = false
 
 
-
-
-
-cosFix.GetShoulderOffsetZoomFactor = function() return 1 end
-if dynamicCamLoaded then
-  cosFix.GetShoulderOffsetZoomFactor = DynamicCam.GetShoulderOffsetZoomFactor
+function cosFix:GetShoulderOffsetZoomFactor(zoomLevel)
+  if not dynamicCamLoaded then
+    return 1
+  else
+    return DynamicCam:GetShoulderOffsetZoomFactor(zoomLevel)
+  end
 end
 
 
@@ -111,6 +111,8 @@ function cosFix:OnInitialize()
   if not customOffsetFactors then
     customOffsetFactors = {
       mountId = {},
+      -- TODO: For some reason you need intractably different offsets for Dracthyr.
+      -- mountIdDracthyr = {},
       vehicleId = {},
       modelId = {},
     }

@@ -33,7 +33,7 @@ end
 
 
 
-function cosFix:GetShoulderOffset(idType, id)
+function cosFix:ModelToShoulderOffset(idType, id)
 
   -- If setFactorFrame is open for id, it overrides everything. 
   local f = self.setFactorFrame
@@ -100,7 +100,7 @@ function cosFix:GetCurrentMount()
 
   -- This looks horribly ineffective, but apparently there is no way of getting the
   -- currently active mount's id directly...
-  for k, v in pairs (C_MountJournal_GetMountIDs()) do
+  for _, v in pairs (C_MountJournal_GetMountIDs()) do
 
     local _, _, _, active = C_MountJournal_GetMountInfoByID(v)
 
@@ -187,7 +187,7 @@ function cosFix:SetLastModelId()
       self.currentModelFactor = self.playerModelOffsetFactors[modelId]
 
       -- Set the shoulder offset again!
-      if not dynamicCamLoaded or (not DynamicCam.LibCamera:ZoomInProgress() and not self.easeShoulderOffsetInProgress) then
+      if not dynamicCamLoaded or (not DynamicCam.LibCamera:IsZooming() and not self.easeShoulderOffsetInProgress) then
 
         local correctedShoulderOffset = self:GetCurrentShoulderOffset() * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor
         SetCVar("test_cameraOverShoulder", correctedShoulderOffset)
@@ -240,8 +240,8 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
   -- print("CorrectShoulderOffset")
 
-  -- self.modelFrame:SetUnit("player")
-  -- local modelId = self.modelFrame:GetModelFileID()
+  self.modelFrame:SetUnit("player")
+  local modelId = self.modelFrame:GetModelFileID()
   -- print("Current modelId", modelId)
 
 
@@ -265,7 +265,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
     local _, _, _, _, _, vehicleId = strsplit("-", vehicleGuid)
     vehicleId = tonumber(vehicleId)
-    returnValue = self:GetShoulderOffset("vehicleId", vehicleId)
+    returnValue = self:ModelToShoulderOffset("vehicleId", vehicleId)
 
 
   -- Is the player mounted?
@@ -332,7 +332,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
           -- Use the last active mount.
           else
             mountId = self.db.char.lastActiveMount
-            returnValue = self:GetShoulderOffset("mountId", mountId)
+            returnValue = self:ModelToShoulderOffset("mountId", mountId)
             
           end
         end
@@ -340,7 +340,15 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
       -- mountId not nil
       else
 
-        returnValue = self:GetShoulderOffset("mountId", mountId)
+        returnValue = self:ModelToShoulderOffset("mountId", mountId)
+        
+        -- -- Did not find a way to convert normal mount offset into mounted-dracthyr offest.
+        -- local modelId = self:GetCurrentModelId()
+        -- if modelId == 4207724 then
+          -- print("You are in dracthyr form")
+          -- returnValue = returnValue
+        -- end
+        
       end
 
     else
@@ -459,7 +467,7 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
         returnValue = self.playerModelOffsetFactors[modelId]
       
       else
-        returnValue = self:GetShoulderOffset("modelId", modelId)
+        returnValue = self:ModelToShoulderOffset("modelId", modelId)
       end
 
     end
