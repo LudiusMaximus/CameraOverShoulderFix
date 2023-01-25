@@ -877,11 +877,11 @@ end)
 
 
 -- For debugging.
-local startup = CreateFrame("Frame")
-startup:RegisterEvent("PLAYER_ENTERING_WORLD")
-startup:SetScript("OnEvent", function(self, event, ...)
-  f:Hide()
-  f:Show()
-end)
+-- local startup = CreateFrame("Frame")
+-- startup:RegisterEvent("PLAYER_ENTERING_WORLD")
+-- startup:SetScript("OnEvent", function(self, event, ...)
+  -- f:Hide()
+  -- f:Show()
+-- end)
 
 

@@ -1,10 +1,10 @@
-## Interface: 100002
+## Interface: 100005
 ## Title: CameraOverShoulderFix
 ## Author: LudiusMaximus
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.
 ## SavedVariables: cosFixDB, customOffsetFactors, customSpellsToModels, newFactorTriggers
 ## OptionalDeps: Ace3, DynamicCam
-## Version: Alpha 1.0a4
+## Version: Alpha 1.0b5
 ## X-Donate: PayPal:ludiusmaximus@gmail.com
 ## X-License: The MIT License (MIT)
 
