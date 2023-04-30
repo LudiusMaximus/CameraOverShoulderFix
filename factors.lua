@@ -150,6 +150,7 @@ cosFix.hardcodedOffsetFactors = {
         [651] = 5.6,   -- Warlord's Deathwheel
         [780] = 5.4,   -- Felsaber
         [934] = 5.75,  -- Swift Spectral Hippogryph
+        [1563]= 4.7,   -- Highland Drake
 
   },
   
