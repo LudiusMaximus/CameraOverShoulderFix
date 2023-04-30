@@ -153,8 +153,10 @@ cosFix.hardcodedOffsetFactors = {
         [934] = 5.75, -- Swift Spectral Hippogryph
 
         -- Thousand and above values (Because OCD)
-        [1563] = 4.7,  -- Highland Drake - 30.04.23
-        [1589] = 4.7,  -- Renewed Proto-Drake - 30.04.23
+        [1563] = 4.7, -- Highland Drake - 30.04.23
+        [1589] = 4.7, -- Renewed Proto-Drake - 30.04.23
+        [1590] = 4.7, -- Windborne Velocidrake - 30.04.23
+        [1679] = 4.7, -- Frostbrood Proto-Wyrm - 30.04.23
 
   },
   
