@@ -260,10 +260,10 @@ local function UnitAuraFunction(_, _, ...)
   local newBuffs = {}
 
   for i = 1, 40 do
-    local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-    if spellId then
-      newBuffs[spellId] = true
-      -- print(i, name, spellId)
+	local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
+    if aura and aura.spellId then
+      newBuffs[aura.spellId] = true
+      -- print(i, aura.name, aura.spellId)
     end
   end
 

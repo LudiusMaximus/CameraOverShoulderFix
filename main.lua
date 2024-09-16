@@ -18,7 +18,7 @@ local GetCameraZoom = _G.GetCameraZoom
 local GetTime = _G.GetTime
 
 local DynamicCam = _G.DynamicCam
-local dynamicCamLoaded = _G.IsAddOnLoaded("DynamicCam")
+local dynamicCamLoaded = _G.C_AddOns.IsAddOnLoaded("DynamicCam")
 
 
 -- Needed if un-hooks without reloading are required.

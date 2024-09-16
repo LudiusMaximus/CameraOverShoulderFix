@@ -21,7 +21,7 @@ local UnitRace = _G.UnitRace
 local UnitSex = _G.UnitSex
 
 
-local dynamicCamLoaded = IsAddOnLoaded("DynamicCam")
+local dynamicCamLoaded = _G.C_AddOns.IsAddOnLoaded("DynamicCam")
 local DynamicCam = _G.DynamicCam
 
 -- Frame to check what player model is active.
