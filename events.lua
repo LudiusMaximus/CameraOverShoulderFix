@@ -8,7 +8,24 @@ local tremove = _G.tremove
 local tinsert = _G.tinsert
 local unpack = _G.unpack
 
-local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
+local function SafeMountInfoByID(mountID)
+    if not mountID or type(mountID) ~= "number" then
+        return nil, nil, nil, nil, nil
+    end
+
+    local f
+    if C_MountJournal then
+        f = C_MountJournal.GetMountInfoByID or C_MountJournal.GetMountInfo
+    end
+
+    if f then
+        return f(mountID)
+    end
+
+    return nil, nil, nil, nil, nil
+end
+
+local C_MountJournal_GetMountInfoByID = SafeMountInfoByID
 local GetShapeshiftFormID = _G.GetShapeshiftFormID
 local InCombatLockdown = _G.InCombatLockdown
 local IsIndoors = _G.IsIndoors
@@ -906,4 +923,5 @@ function cosFix:RegisterEvents()
   self:RegisterEvent("PLAYER_ENTERING_WORLD", "ShoulderOffsetEventHandler")
 
 end
+
 

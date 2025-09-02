@@ -11,7 +11,7 @@ local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
 local GetShapeshiftFormID = _G.GetShapeshiftFormID
 local IsMounted = _G.IsMounted
-local UnitBuff = _G.UnitBuff
+local UnitBuff = C_TooltipInfo.GetUnitBuff
 local UnitClass = _G.UnitClass
 local UnitInVehicle = _G.UnitInVehicle
 local UnitGUID = _G.UnitGUID
@@ -477,4 +477,3 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
   return returnValue
 
 end
-
