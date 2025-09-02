@@ -477,5 +477,3 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
   return returnValue
 
 end
-
-
