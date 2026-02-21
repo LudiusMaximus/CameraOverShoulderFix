@@ -13,7 +13,7 @@ local GetShapeshiftFormID = _G.GetShapeshiftFormID
 local InCombatLockdown = _G.InCombatLockdown
 local IsIndoors = _G.IsIndoors
 local IsMounted = _G.IsMounted
-local UnitBuff = _G.UnitBuff
+local C_UnitAuras = _G.C_UnitAuras
 local UnitClass = _G.UnitClass
 local UnitRace = _G.UnitRace
 local UnitSex = _G.UnitSex
@@ -206,15 +206,17 @@ local function GetDemonHunterForm()
 
   local returnValue = 0
 
-  for i = 1,40 do
-    local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-    -- print(name, spellId)
-    if spellId == 162264 then
-      returnValue = 1
-      break
-    elseif spellId == 187827 then
-      returnValue = 2
-      break
+  for i = 1, 40 do
+    local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
+    if aura and aura.spellId and not issecretvalue(aura.spellId) then
+      local spellId = aura.spellId
+      if spellId == 162264 then
+        returnValue = 1
+        break
+      elseif spellId == 187827 then
+        returnValue = 2
+        break
+      end
     end
   end
 

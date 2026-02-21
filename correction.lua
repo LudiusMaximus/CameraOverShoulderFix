@@ -11,7 +11,7 @@ local C_MountJournal_GetMountInfoByID = _G.C_MountJournal.GetMountInfoByID
 local C_MountJournal_GetMountIDs = _G.C_MountJournal.GetMountIDs
 local GetShapeshiftFormID = _G.GetShapeshiftFormID
 local IsMounted = _G.IsMounted
-local UnitBuff = _G.UnitBuff
+local C_UnitAuras = _G.C_UnitAuras
 local UnitClass = _G.UnitClass
 local UnitInVehicle = _G.UnitInVehicle
 local UnitGUID = _G.UnitGUID
@@ -294,32 +294,34 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
         local specialBuffActive = false
 
         for i = 1, 40 do
-          local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-          -- print (name, spellId)
+          local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
+          if aura and aura.spellId and not issecretvalue(aura.spellId) then
+            local spellId = aura.spellId
 
-          if spellId == 87840 then
-            -- print("Running wild")
+            if spellId == 87840 then
+              -- print("Running wild")
 
-            -- This is actually only needed for the unlikely case that at any point
-            -- "Running wild" would be used by a non-Worgen model.
-            local modelId = self:GetCurrentModelId()
+              -- This is actually only needed for the unlikely case that at any point
+              -- "Running wild" would be used by a non-Worgen model.
+              local modelId = self:GetCurrentModelId()
 
-            -- If an unknown modelId is returned, assume that we are Worgen (more likely than any other model).
-            if (modelId == nil) or (self.playerModelOffsetFactors[modelId] == nil) then
-              returnValue = mountedFactor * self.playerModelOffsetFactors[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
-            else
-              -- This would also work for "Running wild" with any other model in playerModelOffsetFactors.
-              returnValue = mountedFactor * self.playerModelOffsetFactors[modelId] * 10
+              -- If an unknown modelId is returned, assume that we are Worgen (more likely than any other model).
+              if (modelId == nil) or (self.playerModelOffsetFactors[modelId] == nil) then
+                returnValue = mountedFactor * self.playerModelOffsetFactors[self.raceAndGenderToModelId["Worgen"][UnitSex("player")]] * 10
+              else
+                -- This would also work for "Running wild" with any other model in playerModelOffsetFactors.
+                returnValue = mountedFactor * self.playerModelOffsetFactors[modelId] * 10
+              end
+
+              specialBuffActive = true
+              break
+
+            elseif spellId == 40212 then
+              -- print("Dragonmaw Nether Drake")
+              returnValue = mountedFactor * 2.5
+              specialBuffActive = true
+              break
             end
-
-            specialBuffActive = true
-            break
-
-          elseif spellId == 40212 then
-            -- print("Dragonmaw Nether Drake")
-            returnValue = mountedFactor * 2.5
-            specialBuffActive = true
-            break
           end
         end
 
@@ -420,32 +422,34 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     local metamorphosis = false
     if englishClass == "DEMONHUNTER" then
       for i = 1, 40 do
-        local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
-        -- print(name, spellId)
-        if spellId == 162264 then
-          -- print("Demon Hunter Metamorphosis Havoc")
-          if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"] then
-            returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
-          else
-            self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for 'Havoc' not yet known...")
-            returnValue = 1
+        local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
+        if aura and aura.spellId and not issecretvalue(aura.spellId) then
+          local spellId = aura.spellId
+          if spellId == 162264 then
+            -- print("Demon Hunter Metamorphosis Havoc")
+            if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"] then
+              returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Havoc"]
+            else
+              self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for 'Havoc' not yet known...")
+              returnValue = 1
+            end
+
+            metamorphosis = true
+            break
+
+          elseif spellId == 187827 then
+            -- print("Demon Hunter Metamorphosis Vengeance")
+            if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"] then
+              returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]
+            else
+              self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for 'Vengeance' not yet known...")
+              returnValue = 1
+            end
+
+            metamorphosis = true
+            break
+
           end
-
-          metamorphosis = true
-          break
-
-        elseif spellId == 187827 then
-          -- print("Demon Hunter Metamorphosis Vengeance")
-          if self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"] then
-            returnValue = self.demonhunterFormToShoulderOffsetFactor[raceFile][genderCode]["Vengeance"]
-          else
-            self:DebugPrint(raceFile .. " " .. ((genderCode == 2) and "male" or "female") .. " Demonhunter form factor for 'Vengeance' not yet known...")
-            returnValue = 1
-          end
-
-          metamorphosis = true
-          break
-
         end
       end
     end
