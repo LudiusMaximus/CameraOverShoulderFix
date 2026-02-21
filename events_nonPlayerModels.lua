@@ -261,7 +261,7 @@ local function UnitAuraFunction(_, _, ...)
 
   for i = 1, 40 do
 	local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-    if aura and aura.spellId then
+    if aura and aura.spellId and not issecretvalue(aura.spellId) then
       newBuffs[aura.spellId] = true
       -- print(i, aura.name, aura.spellId)
     end
