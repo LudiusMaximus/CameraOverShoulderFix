@@ -234,10 +234,16 @@ end
 -- Determine and set a the shoulder offset with or without a delay.
 -- The last argument (modelFactor) is optional and can be set
 -- if a specific modelFactor should be enforced.
-function cosFix:SetDelayedShoulderOffset(delay, modelFactor)
-  -- print("SetDelayedShoulderOffset", delay, modelFactor)
+function cosFix:SetDelayedShoulderOffset(delay, modelFactor, delayDetection)
+  -- print("SetDelayedShoulderOffset", delay, modelFactor, delayDetection)
 
   if not delay then delay = 0 end
+
+  -- When delayDetection is true, delay both detection and application together.
+  -- Use this when the model hasn't transitioned yet at call time.
+  if delay > 0 and delayDetection and not modelFactor then
+    return cosFix_wait(delay, function() self:SetDelayedShoulderOffset() end)
+  end
 
   if not modelFactor then
     modelFactor = self:CorrectShoulderOffset()
@@ -250,7 +256,7 @@ function cosFix:SetDelayedShoulderOffset(delay, modelFactor)
   end
 
 
-  -- Do something immedeately!
+  -- Do something immediately!
   if delay == 0 then
 
     self.currentModelFactor = modelFactor
@@ -585,9 +591,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
         -- When changing from aquatic/travel form or Tree of Life into normal druid,
         -- there is always a first UPDATE_SHAPESHIFT_FORM in which the old shapeshifted form is still detected.
         -- This will start a timer, which we have to revoke here.
+        -- We also need delayed detection because GetModelFileID() still returns the form model
+        -- after GetShapeshiftFormID() already returns nil.
         if (self.db.char.lastformId == 2) or (self.db.char.lastformId == 3) or (self.db.char.lastformId == 4) or (self.db.char.lastformId == 27) or (self.db.char.lastformId == 29) then
           cosFix_waitTable = {}
           self.db.char.lastformId = nil
+          return self:SetDelayedShoulderOffset(0.1, nil, true)
         end
 
 
