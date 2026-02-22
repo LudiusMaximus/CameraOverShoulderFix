@@ -106,6 +106,7 @@ cosFix.raceAndGenderToModelId = {
   ["MagharOrc"]          = {  [2] = 1968587,  [3] = 949470   },   -- Same as Orc
   ["ZandalariTroll"]     = {  [2] = 1630447,  [3] = 1662187  },
   ["Vulpera"]            = {  [2] = 1890761,  [3] = 1890759  },
+  ["Dracthyr"]           = {  [2] = 4207724,  [3] = 4207724  },  -- Dragon form (shared model)
 
 
   ["Pandaren"]           = {  [2] = 535052,   [3] = 589715  },
