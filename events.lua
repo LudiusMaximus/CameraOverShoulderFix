@@ -711,9 +711,12 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- (e.g. certain quest givers like Great-father Winter).
       -- This can be checked by trying if the last active mount is usable.
       -- Interestingly this does not work for entering indoors, so we still need the check above.
-      local _, _, _, _, lastActiveMountUsable = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
-      if not lastActiveMountUsable then
-        return self:SetDelayedShoulderOffset()
+      -- Note: lastActiveMount is nil when landing from Soar.
+      if self.db.char.lastActiveMount then
+        local _, _, _, _, lastActiveMountUsable = C_MountJournal_GetMountInfoByID(self.db.char.lastActiveMount)
+        if not lastActiveMountUsable then
+          return self:SetDelayedShoulderOffset()
+        end
       end
 
 
