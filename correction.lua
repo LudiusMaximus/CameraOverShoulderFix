@@ -240,6 +240,9 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
   -- print("CorrectShoulderOffset")
 
+  -- The frame can return stale model IDs during rapid form transitions
+  -- (cat -> bear -> exit returns cat). ClearModel() forces a refresh.
+  self.modelFrame:ClearModel()
   self.modelFrame:SetUnit("player")
   local modelId = self.modelFrame:GetModelFileID()
   -- print("Current modelId", modelId)
