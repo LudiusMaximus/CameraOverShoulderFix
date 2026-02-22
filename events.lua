@@ -529,7 +529,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       local _, raceFile = UnitRace("player")
       if raceFile == "Worgen" then
-        self.skipNextWorgenUnitModelChanged = 1
+        -- Druid form transitions fire two UNIT_MODEL_CHANGED events
+        self.skipNextWorgenUnitModelChanged = 2
       end
 
 
