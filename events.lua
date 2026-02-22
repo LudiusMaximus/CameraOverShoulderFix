@@ -538,10 +538,8 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       if formId ~= nil then
         -- print("You are changing into a shapeshift form.", formId)
 
-        -- Worgen druids automatically change into Worgen form, when changing into a druid shapeshift form.
-        if raceFile == "Worgen" then
-          self.db.char.lastModelId = self.raceAndGenderToModelId["Worgen"][UnitSex("player")]
-        end
+        -- Worgen druids no longer auto-shift to Worgen form ("Calm the Wolf" allows Human).
+        -- Let normal model detection handle it like other druids.
 
         -- When changing into shapeshift, two UPDATE_SHAPESHIFT_FORM
         -- are executed, the first of which still gets formId == nil (if normal) or the previous formId (if shapeshifted).
