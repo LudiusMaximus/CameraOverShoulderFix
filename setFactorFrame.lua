@@ -17,7 +17,8 @@ end
 cosFix.vehicleIdToName = {}
 local mutex = false
 local function StoreVehicleIdToName(unit)
-  if issecretvalue(unit) or unit ~= "vehicle" or mutex then return end
+  -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+  if (issecretvalue and issecretvalue(unit)) or unit ~= "vehicle" or mutex then return end
 
   mutex = true
   local vehicleGUID = UnitGUID("vehicle")

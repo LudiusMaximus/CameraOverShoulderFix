@@ -295,7 +295,8 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
 
         for i = 1, 40 do
           local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-          if aura and aura.spellId and not issecretvalue(aura.spellId) then
+          -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+          if aura and aura.spellId and (not issecretvalue or not issecretvalue(aura.spellId)) then
             local spellId = aura.spellId
 
             if spellId == 87840 then
@@ -423,7 +424,8 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
     if englishClass == "DEMONHUNTER" then
       for i = 1, 40 do
         local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-        if aura and aura.spellId and not issecretvalue(aura.spellId) then
+        -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+        if aura and aura.spellId and (not issecretvalue or not issecretvalue(aura.spellId)) then
           local spellId = aura.spellId
           if spellId == 162264 then
             -- print("Demon Hunter Metamorphosis Havoc")

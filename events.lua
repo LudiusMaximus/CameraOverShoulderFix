@@ -208,7 +208,8 @@ local function GetDemonHunterForm()
 
   for i = 1, 40 do
     local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-    if aura and aura.spellId and not issecretvalue(aura.spellId) then
+    -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+    if aura and aura.spellId and (not issecretvalue or not issecretvalue(aura.spellId)) then
       local spellId = aura.spellId
       if spellId == 162264 then
         returnValue = 1
