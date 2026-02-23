@@ -25,14 +25,6 @@ local dynamicCamLoaded = _G.C_AddOns.IsAddOnLoaded("DynamicCam")
 local runhook = false
 
 
-function cosFix:GetShoulderOffsetZoomFactor(zoomLevel)
-  if not dynamicCamLoaded then
-    return 1
-  else
-    return DynamicCam:GetShoulderOffsetZoomFactor(zoomLevel)
-  end
-end
-
 
 function cosFix:GetCurrentShoulderOffset()
   if dynamicCamLoaded then
@@ -67,7 +59,14 @@ function cosFix:CosFixSetCVar(...)
   
   if variable == "test_cameraOverShoulder" then
     cosFix.currentModelFactor = cosFix:CorrectShoulderOffset()
-    value = value * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.currentModelFactor
+    if dynamicCamLoaded then
+      -- DynamicCam owns the CVar and must apply it (whether via zoom-curve interpolation
+      -- or direct value), always combined with currentModelFactor compensation.
+      -- Reset DC's cache so CvarUpdateFunction re-evaluates on the next frame.
+      DynamicCam:ResetZoomBasedSettingsCache()
+      return
+    end
+    value = value * cosFix.currentModelFactor
   end
   
   SetCVar(variable, value)

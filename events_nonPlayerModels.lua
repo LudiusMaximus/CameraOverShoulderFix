@@ -444,11 +444,10 @@ local function FrameCounterFunction(_, elapse)
         -- TODO: Make function to check custom and hardcoded factors.
         local modelId = hardcodedSpellsToModels[counterPrimedSpellId][UnitSex("player")]
         
-        cosFix.currentModelFactor = cosFix:ModelToShoulderOffset("model", modelId)
+        cosFix.currentModelFactor = cosFix:ModelToShoulderOffset("modelId", modelId)
       end
       
-      local correctedShoulderOffset = cosFix:GetCurrentShoulderOffset() * cosFix:GetShoulderOffsetZoomFactor(GetCameraZoom()) * cosFix.currentModelFactor
-      SetCVar("test_cameraOverShoulder", correctedShoulderOffset)
+      cosFix:SetShoulderOffset()
 
     end
   end

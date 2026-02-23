@@ -227,7 +227,17 @@ end
 -- This function is needed to set a delayed update in the future,
 -- for which we do yet not know the currentShoulderOffset value.
 function cosFix:SetShoulderOffset()
-  SetCVar("test_cameraOverShoulder", self:GetCurrentShoulderOffset() * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor)
+  if dynamicCamLoaded then
+    -- DynamicCam's CvarUpdateFunction handles CVar application, including:
+    -- - zoom-curve interpolation (the generalized replacement for GetShoulderOffsetZoomFactor)
+    -- - applying cosFix.currentModelFactor via ApplyCameraOverShoulderFixCompensation
+    -- CvarUpdateFunction only runs when zoom changes or easing is active.
+    -- Reset DC's cache to force it to re-evaluate on the next frame with the
+    -- updated currentModelFactor, avoiding any wrong intermediate value.
+    DynamicCam:ResetZoomBasedSettingsCache()
+  else
+    SetCVar("test_cameraOverShoulder", self:GetCurrentShoulderOffset() * self.currentModelFactor)
+  end
 end
 
 

@@ -170,8 +170,7 @@ end
 
 
 function cosFix:OpenOptionsMenu()
-  InterfaceOptionsFrame_OpenToCategory(self.optionsMenu)
-  InterfaceOptionsFrame_OpenToCategory(self.optionsMenu)
+  Settings.OpenToCategory(self.optionsMenu.name)
 end
 
 

@@ -188,10 +188,7 @@ function cosFix:SetLastModelId()
 
       -- Set the shoulder offset again!
       if not dynamicCamLoaded or (not DynamicCam.LibCamera:IsZooming() and not self.easeShoulderOffsetInProgress) then
-
-        local correctedShoulderOffset = self:GetCurrentShoulderOffset() * self:GetShoulderOffsetZoomFactor(GetCameraZoom()) * self.currentModelFactor
-        SetCVar("test_cameraOverShoulder", correctedShoulderOffset)
-
+        self:SetShoulderOffset()
       end
 
     end
