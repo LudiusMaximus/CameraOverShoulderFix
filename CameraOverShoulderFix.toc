@@ -4,7 +4,7 @@
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.
 ## SavedVariables: cosFixDB, customOffsetFactors, customSpellsToModels, newFactorTriggers
 ## OptionalDeps: Ace3, DynamicCam
-## Version: Alpha 1.0b7
+## Version: Alpha 1.0b8
 ## X-Donate: PayPal:ludiusmaximus@gmail.com
 ## X-License: The MIT License (MIT)
 
