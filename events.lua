@@ -805,7 +805,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
       -- For Ghost Wolf, fall back to UNIT_MODEL_CHANGED if model is still not ready.
       if self.exitingGhostWolf then
         local modelId = self:GetCurrentModelId()
-        if not self.playerModelOffsetFactors[modelId] then
+        if modelId == self.ghostWolfModelId then
           -- Model still Ghost Wolf, do nothing, let the fallback handle it.
           return
         end
