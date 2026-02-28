@@ -378,6 +378,7 @@ cosFix.demonhunterFormToShoulderOffsetFactor = {
 
 
 -- TODO: https://www.wowhead.com/item=137287/glyph-of-the-spectral-raptor#created-by-spell
+cosFix.ghostWolfModelId = 926251
 cosFix.shamanGhostwolfToShoulderOffsetFactor = {
   [16]  = 0.758,  -- Ghostwolf
 };

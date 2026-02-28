@@ -491,8 +491,19 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       -- Call with pre-determined modelFactor to avoid recalculation.
       return self:SetDelayedShoulderOffset(0, modelFactor)
+    end
 
+    -- Model transition from Shaman Ghost Wolf to player model.
+    if self.exitingGhostWolf then
+      self.modelFrame:SetUnit("player")
+      local modelId = self.modelFrame:GetModelFileID()
 
+      -- Check if model is no longer Ghost Wolf.
+      -- We get two UNIT_MODEL_CHANGED events.
+      if modelId ~= self.ghostWolfModelId then
+        self.exitingGhostWolf = false
+        return self:SetDelayedShoulderOffset()
+      end
     end
 
     -- print("... doing nothing!")
@@ -520,7 +531,7 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         -- The UPDATE_SHAPESHIFT_FORM while changing into Ghostwolf comes too early.
         -- And also the subsequent UNIT_MODEL_CHANGED is still too early.
-        -- That is why we have to use  a delay instead.
+        -- That is why we have to use a delay instead.
         return self:SetDelayedShoulderOffset(0.01)
 
       else
@@ -529,7 +540,9 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
         -- Do not change the shoulder offset here.
         -- Wait until the next UNIT_AURA for perfect timing.
+        -- Also set flag for UNIT_MODEL_CHANGED as a fallback.
         self.activateNextUnitAura = true
+        self.exitingGhostWolf = true
 
         return
 
@@ -788,6 +801,17 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       self.activateNextUnitAura = false
       self.activateNextHealthFrequent = false
+
+      -- For Ghost Wolf, fall back to UNIT_MODEL_CHANGED if model is still not ready.
+      if self.exitingGhostWolf then
+        local modelId = self:GetCurrentModelId()
+        if not self.playerModelOffsetFactors[modelId] then
+          -- Model still Ghost Wolf, do nothing, let the fallback handle it.
+          return
+        end
+        -- Model changed, unset the flag.
+        self.exitingGhostWolf = false
+      end
 
       return self:SetDelayedShoulderOffset()
 
