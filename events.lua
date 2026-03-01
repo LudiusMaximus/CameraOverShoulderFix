@@ -767,14 +767,26 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
 
       -- When shoulder offset is greater than 0, we need to set it to 10 times its actual value
       -- for the time between this PLAYER_MOUNT_DISPLAY_CHANGED and the next UNIT_AURA.
+      -- However, /dismount macro fires UNIT_AURA same-frame, sometimes causing race conditions.
+      -- Compare timestamps to detect same-frame UNIT_AURA and skip *10 in that case.
       local modelFactor = self:CorrectShoulderOffset()
-      
-      if self:GetCurrentShoulderOffset() > 0 then
-        modelFactor = modelFactor * 10
-      end
+      local dismountTime = GetTime()
+
+      -- After one frame, check if UNIT_AURA fired recently (within 150ms).
+      -- If yes - model already changed, skip *10 (same-frame or race condition).
+      -- If not - delayed dismount with transition window, apply *10.
+      cosFix_wait(0.001, function()
+        if self.activateNextUnitAura and self:GetCurrentShoulderOffset() > 0 then
+          local timeSinceUnitAura = dismountTime - (self.lastUnitAuraTime or 0)
+          if timeSinceUnitAura >= 0.15 then
+            self:SetDelayedShoulderOffset(0, modelFactor * 10)
+          end
+        end
+      end)
+
+      -- Apply normal offset immediately (for /dismount macro).
       -- Call with pre-determined modelFactor to avoid recalculation.
       return self:SetDelayedShoulderOffset(0, modelFactor)
-
 
     else
       -- print("PLAYER_MOUNT_DISPLAY_CHANGED: Mounted")
@@ -793,6 +805,10 @@ function cosFix:ShoulderOffsetEventHandler(event, ...)
     if unitName ~= "player" then
       return
     end
+
+    -- Track when UNIT_AURA fires BEFORE checking flags.
+    -- Used to detect recent UNIT_AURA firing relative to PLAYER_MOUNT_DISPLAY_CHANGED.
+    self.lastUnitAuraTime = GetTime()
 
     -- This is flag is set while dismounting and while changing from Ghostwolf into Shaman.
     if self.activateNextUnitAura == true then
