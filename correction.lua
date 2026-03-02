@@ -322,6 +322,20 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
               returnValue = mountedFactor * 2.5
               specialBuffActive = true
               break
+
+            elseif spellId == 386196 then
+              -- print("Soar (Dracthyr racial)")
+              local modelId = self:GetCurrentModelId()
+
+              if modelId and self.playerModelOffsetFactors[modelId] then
+                returnValue = mountedFactor * self.playerModelOffsetFactors[modelId] * 10
+              else
+                -- Fallback to Dracthyr dragon form factor.
+                returnValue = mountedFactor * self.playerModelOffsetFactors[self.raceAndGenderToModelId["Dracthyr"][UnitSex("player")]] * 10
+              end
+
+              specialBuffActive = true
+              break
             end
           end
         end
