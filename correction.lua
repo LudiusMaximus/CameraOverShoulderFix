@@ -54,7 +54,14 @@ function cosFix:ModelToShoulderOffset(idType, id)
   
   -- Otherwise the id is not yet known.
   if idType == "vehicleId" then
-    local vehicleName = cosFix.vehicleIdToName[id] or UnitName("vehicle")
+    local vehicleName = cosFix.vehicleIdToName[id]
+    if not vehicleName then
+      local unitName = UnitName("vehicle")
+      -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+      if not issecretvalue or not issecretvalue(unitName) then
+        vehicleName = unitName
+      end
+    end
     if not vehicleName then
       self:DebugPrintUnknownModel("Vehicle with ID " .. id .. " not yet known. |cffff9900|Hitem:cosFix:vehicleId:".. id .."|h[Click here to define it!]|h|r")
     else
@@ -65,7 +72,8 @@ function cosFix:ModelToShoulderOffset(idType, id)
     self:DebugPrintUnknownModel("Mount '" .. creatureName .. "' (" .. id .. ") not yet known. |cffff9900|Hitem:cosFix:mountId:".. id .. "|h[Click here to define it!]|h|r")
   elseif idType == "modelId" then
     -- Provide id of last spellcast!
-    if cosFix.lastSpellId and GetTime() - cosFix.lastSpellTime < 0.2 then
+    -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+    if cosFix.lastSpellId and (not issecretvalue or not issecretvalue(cosFix.lastSpellId)) and GetTime() - cosFix.lastSpellTime < 0.2 then
       local spellName = GetSpellInfo(cosFix.lastSpellId)
       self:DebugPrintUnknownModel("Model with ID " .. id .. " (" .. spellName .. " ?) not yet known. |cffff9900|Hitem:cosFix:modelId:" .. id .. ":spellId:" .. cosFix.lastSpellId .. "|h[Click here to define it!]|h|r")
     else
@@ -251,21 +259,30 @@ function cosFix:CorrectShoulderOffset(enteringVehicleGuid)
   if enteringVehicleGuid or UnitInVehicle("player") then
     -- print("You are entering or on a vehicle.")
 
-    local vehicleGuid = ""
+    local vehicleGuid
     if enteringVehicleGuid then
-      vehicleGuid = enteringVehicleGuid
+      -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+      if not issecretvalue or not issecretvalue(enteringVehicleGuid) then
+        vehicleGuid = enteringVehicleGuid
+      end
       -- print("Entering vehicle.", enteringVehicleGuid)
     else
       vehicleGuid = UnitGUID("vehicle")
       -- print("Already in vehicle.", vehicleGuid)
+      -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
+      if issecretvalue and issecretvalue(vehicleGuid) then
+        vehicleGuid = nil
+      end
     end
 
     -- TODO: Could also be "Player-...." if you mount a player in druid travel form.
     -- TODO: Or what if you mount another player's "double-seater" mount?
 
-    local _, _, _, _, _, vehicleId = strsplit("-", vehicleGuid)
-    vehicleId = tonumber(vehicleId)
-    returnValue = self:ModelToShoulderOffset("vehicleId", vehicleId)
+    if vehicleGuid then
+      local _, _, _, _, _, vehicleId = strsplit("-", vehicleGuid)
+      vehicleId = tonumber(vehicleId)
+      returnValue = self:ModelToShoulderOffset("vehicleId", vehicleId)
+    end
 
 
   -- Is the player mounted?

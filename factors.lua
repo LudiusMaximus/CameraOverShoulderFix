@@ -155,23 +155,26 @@ cosFix.hardcodedOffsetFactors = {
   },
   
   ["vehicleId"] = {
-  
+
       [35129] = 0.38,  -- Reprogrammed Shredder (Azshara)
       [40854] = 0.20,  -- River Boat (Thousand Needles)
-              
+
      [113042] = 1.0,   -- Illidan Stormrage (Ravencrest Scenario)
      [113101] = 1.0,   -- Illidan Stormrage (Temple Summit Scenario)
-              
+
      [114281] = 1.0,   -- Flight Master's Mount (Flight Master's Whistle)
-  
+
+     [235294] = 1.0,   -- Soul Conduit transport (Windrunner Spire Dungeon)
+
   },
   
   
   -- Non-player models.
   ["modelId"] = {
-  
+
      [118653] = 1.03,  -- Dragonmaw Fel Orc male (Dragonmaw Illusion in BC Shadowmoon Valley)
      [124118] = 0.87,  -- Furbolg Form (Stave of Fur and Claw)
+     [124640] = 1.0,   -- Soul Conduit transport visual (Windrunner Spire Dungeon)
     [1113034] = 1.2,   -- Murloc Costume
 
   },
