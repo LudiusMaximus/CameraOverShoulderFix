@@ -74,7 +74,7 @@ function cosFix:ModelToShoulderOffset(idType, id)
     -- Provide id of last spellcast!
     -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
     if cosFix.lastSpellId and (not issecretvalue or not issecretvalue(cosFix.lastSpellId)) and GetTime() - cosFix.lastSpellTime < 0.2 then
-      local spellName = GetSpellInfo(cosFix.lastSpellId)
+      local spellName = C_Spell.GetSpellName(cosFix.lastSpellId)
       self:DebugPrintUnknownModel("Model with ID " .. id .. " (" .. spellName .. " ?) not yet known. |cffff9900|Hitem:cosFix:modelId:" .. id .. ":spellId:" .. cosFix.lastSpellId .. "|h[Click here to define it!]|h|r")
     else
       self:DebugPrintUnknownModel("Model with ID " .. id .. " not yet known. Perform form change again to get the responsible spell.")

@@ -87,7 +87,7 @@ function cosFix:SpellsToModel(spellId)
   elseif idType == "modelId" then
     -- Provide id of last spellcast!
     if cosFix.lastSpellId and GetTime() - cosFix.lastSpellTime < 0.2 then
-      local spellName = GetSpellInfo(cosFix.lastSpellId)
+      local spellName = C_Spell.GetSpellName(cosFix.lastSpellId)
       self:DebugPrintUnknownModel("Model with ID " .. id .. " (" .. spellName .. " ?) not yet known. |cffff9900|Hitem:cosFix:modelId:" .. id .. ":spellId:" .. cosFix.lastSpellId .. "|h[Click here to define it!]|h|r")
     else
       self:DebugPrintUnknownModel("Model with ID " .. id .. " not yet known. Perform form change again to get the responsible spell.")
