@@ -1,4 +1,4 @@
-## Interface: 120001
+## Interface: 120007
 ## Title: CameraOverShoulderFix
 ## Author: LudiusMaximus
 ## Notes: Compensating the undesirably |ndifferent effects of cvar |ntest_cameraOverShoulder |ndepending on player model.
