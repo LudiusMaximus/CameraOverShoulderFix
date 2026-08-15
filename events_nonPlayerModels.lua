@@ -260,9 +260,10 @@ local function UnitAuraFunction(_, _, ...)
   local newBuffs = {}
 
   for i = 1, 40 do
-	local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-    -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
-    if aura and aura.spellId and (not issecretvalue or not issecretvalue(aura.spellId)) then
+    -- pcall because GetBuffDataByIndex throws when auras are secret and caller is tainted.
+    local ok, aura = pcall(C_UnitAuras.GetBuffDataByIndex, "player", i)
+    if not ok then return end
+    if aura and aura.spellId then
       newBuffs[aura.spellId] = true
       -- print(i, aura.name, aura.spellId)
     end

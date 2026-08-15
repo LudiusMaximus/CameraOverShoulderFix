@@ -204,24 +204,14 @@ cosFix.timeOfLastSpellsChanged = 0
 -- 0 normal, 1 havoc, 2 vengeance
 local function GetDemonHunterForm()
 
-  local returnValue = 0
-
-  for i = 1, 40 do
-    local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-    -- Checking for existence of issecretvalue to be compatible with pre-midnight clients.
-    if aura and aura.spellId and (not issecretvalue or not issecretvalue(aura.spellId)) then
-      local spellId = aura.spellId
-      if spellId == 162264 then
-        returnValue = 1
-        break
-      elseif spellId == 187827 then
-        returnValue = 2
-        break
-      end
-    end
+  -- GetPlayerAuraBySpellID is taint-safe and returns nil for secret auras.
+  if C_UnitAuras.GetPlayerAuraBySpellID(162264) then
+    return 1
+  elseif C_UnitAuras.GetPlayerAuraBySpellID(187827) then
+    return 2
   end
 
-  return returnValue
+  return 0
 end
 
 
